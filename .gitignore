@@ -1,0 +1,14 @@
+node_modules
+dist
+.next
+.turbo
+.env
+.env.local
+.env.*.local
+*.log
+.DS_Store
+coverage
+.drizzle-pull
+apps/admin/dev-dist
+docs/training/tools/node_modules
+docs/training/.*.html

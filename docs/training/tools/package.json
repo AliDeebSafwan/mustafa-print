@@ -1,0 +1,7 @@
+{
+  "name": "mpe-training-tools",
+  "private": true,
+  "type": "module",
+  "description": "Regenerates the training screenshots and PDFs. Not part of the app.",
+  "dependencies": { "@sparticuz/chromium": "^143.0.0", "puppeteer-core": "^24.0.0", "marked": "^16.0.0" }
+}

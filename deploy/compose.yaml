@@ -1,0 +1,92 @@
+# Production: one server runs everything. Start with:  docker compose --env-file .env up -d --build
+# Every value comes from deploy/.env (copy .env.example). Data lives in ./data (back it up; see backup.sh).
+name: mustafa-print
+
+x-api: &api
+  image: mustafa-print/api:latest
+  env_file: .env
+  environment:
+    DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+    NODE_ENV: production
+    TRUST_PROXY: "1"
+    CORS_ORIGINS: https://${APP_DOMAIN}
+    PUBLIC_WEB_URL: https://${SITE_DOMAIN}
+    WEB_REVALIDATE_URL: http://web:3000/api/revalidate
+    WEB_REVALIDATE_SECRET: ${REVALIDATE_SECRET}
+    MEDIA_DIR: /data/media
+  restart: unless-stopped
+
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5432:5432"          # the host only (backups); never the internet
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  # Applies new database migrations and adds any new default messages, then exits. The API starts only if it succeeded.
+  migrate:
+    <<: *api
+    build: { context: .., dockerfile: apps/api/Dockerfile }
+    command: ["node", "dist/migrate.js"]
+    restart: "no"
+    depends_on:
+      db: { condition: service_healthy }
+
+  api:
+    <<: *api
+    command: ["node", "dist/server.js"]
+    volumes:
+      - ./data/media:/data/media
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+
+  worker:
+    <<: *api
+    command: ["node", "dist/worker.js"]
+    volumes:
+      - ./data/media:/data/media        # it removes design files nobody attached to an order
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+
+  web:
+    build: { context: .., dockerfile: apps/web/Dockerfile }
+    image: mustafa-print/web:latest
+    restart: unless-stopped
+    environment:
+      API_INTERNAL_URL: http://api:4000
+      PUBLIC_API_URL: https://${SITE_DOMAIN}
+      SITE_URL: https://${SITE_DOMAIN}
+      REVALIDATE_SECRET: ${REVALIDATE_SECRET:?set REVALIDATE_SECRET}
+    depends_on: [api]
+
+  caddy:
+    build:
+      context: ..
+      dockerfile: deploy/caddy.Dockerfile
+      args:
+        APP_URL: https://${APP_DOMAIN:?set APP_DOMAIN}
+        SITE_URL: https://${SITE_DOMAIN:?set SITE_DOMAIN}
+    image: mustafa-print/caddy:latest
+    restart: unless-stopped
+    environment:
+      SITE_DOMAIN: ${SITE_DOMAIN}
+      APP_DOMAIN: ${APP_DOMAIN}
+      ACME_EMAIL: ${ACME_EMAIL:?set ACME_EMAIL}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./data/caddy:/data
+    depends_on: [api, web]

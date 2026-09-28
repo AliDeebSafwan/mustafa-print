@@ -1,0 +1,13 @@
+# Everything an image must never contain: other builds, local data, secrets.
+**/node_modules
+**/dist
+**/.next
+**/.turbo
+**/*.tsbuildinfo
+**/.env
+**/.env.*
+!**/.env.example
+**/storage
+deploy/data
+deploy/backups
+.git

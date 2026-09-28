@@ -1,0 +1,8 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+  - "e2e"
+allowBuilds:
+  esbuild: true
+  sharp: false          # next/image uses the prebuilt binary; no install script needed
+  unrs-resolver: false

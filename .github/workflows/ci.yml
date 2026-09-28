@@ -1,0 +1,32 @@
+# Every push: types, lint, and every test against a real PostgreSQL, the same checks run before each delivery.
+name: ci
+on: [push, pull_request]
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env: { POSTGRES_USER: ci, POSTGRES_PASSWORD: ci, POSTGRES_DB: postgres }
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U ci" --health-interval 5s --health-timeout 3s --health-retries 20
+    env:
+      TEST_DATABASE_URL: postgres://ci:ci@localhost:5432/postgres
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm -r --if-present lint
+      - run: pnpm test
+      - run: pnpm build
+      - name: schema rules
+        run: |
+          sudo apt-get install -y postgresql-client >/dev/null
+          createdb -h localhost -U ci ci_schema
+          DATABASE_URL=postgres://ci:ci@localhost:5432/ci_schema pnpm --filter @mpe/api db:migrate
+          psql -h localhost -U ci -d ci_schema -v ON_ERROR_STOP=1 -f apps/api/db/tests/smoke.sql
+        env: { PGPASSWORD: ci }

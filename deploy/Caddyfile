@@ -1,0 +1,57 @@
+# Two addresses, one server. Caddy obtains and renews the HTTPS certificates by itself.
+#   SITE_DOMAIN : the customer website (e.g. almustafa-print.com)
+#   APP_DOMAIN  : the staff app and its API (e.g. app.almustafa-print.com)
+# The API lives under the staff app's own domain on purpose: the sign-in cookie is SameSite=Strict.
+{
+	email {$ACME_EMAIL}
+}
+
+(common) {
+	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		-Server
+	}
+}
+
+{$SITE_DOMAIN} {
+	import common
+	# Visitors reach the shop's pictures and order tracking through the website's own address.
+	handle /api/v1/public/* {
+		reverse_proxy api:4000
+	}
+	# Only the API may ask the website to refresh; it does so over the internal network, never from outside.
+	handle /api/revalidate {
+		respond 404
+	}
+	handle {
+		reverse_proxy web:3000
+	}
+}
+
+www.{$SITE_DOMAIN} {
+	redir https://{$SITE_DOMAIN}{uri} permanent
+}
+
+{$APP_DOMAIN} {
+	import common
+	handle /api/* {
+		reverse_proxy api:4000
+	}
+	handle /webhooks/* {
+		reverse_proxy api:4000
+	}
+	handle {
+		root * /srv/admin
+		# Built files carry their hash in the name: cache them forever. The service worker must always be fresh,
+		# or staff would stay on an old version of the app.
+		@hashed path /assets/*
+		header @hashed Cache-Control "public, max-age=31536000, immutable"
+		@worker path /sw.js /registerSW.js /manifest.webmanifest
+		header @worker Cache-Control "no-cache"
+		try_files {path} /index.html
+		file_server
+	}
+}

@@ -1,0 +1,25 @@
+@import "tailwindcss";
+
+:root {
+  --paper: #ffffff; --ink: #101418; --muted: #5b6470; --rule: #d9dde3; --tint: #f4f6f8;
+  --magenta: #e5006d; --cyan: #00a3e0; --yellow: #ffd500; --ok: #0a7d4b; --warn: #b45309;
+  color-scheme: light;
+}
+
+@theme inline {
+  --color-paper: var(--paper); --color-ink: var(--ink); --color-muted: var(--muted); --color-rule: var(--rule);
+  --color-tint: var(--tint); --color-magenta: var(--magenta); --color-cyan: var(--cyan); --color-yellow: var(--yellow);
+  --color-ok: var(--ok); --color-warn: var(--warn);
+  --font-sans: "Cairo Variable", "Segoe UI", Tahoma, system-ui, sans-serif;
+}
+
+html, body, #root { height: 100%; }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-sans); -webkit-font-smoothing: antialiased; overscroll-behavior-y: none; }
+button, a, input, select { touch-action: manipulation; }
+:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { *, ::before, ::after { animation: none !important; transition: none !important; } }
+
+/* Text arrows. Written as "←" everywhere; each class mirrors it in the direction where it would point the wrong way.
+   .arrow-go   — "go to this": points left in Arabic (forward), mirrored in English.
+   .arrow-back — "back": points left in English, mirrored in Arabic (back is to the right in a right-to-left page). */
+[dir="ltr"] .arrow-go, [dir="rtl"] .arrow-back { display: inline-block; transform: scaleX(-1); }

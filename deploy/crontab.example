@@ -1,0 +1,7 @@
+# Install with:  crontab -e   (as root on the server), adjusting /srv/mustafa-print to where the code lives.
+# Every night at 02:30 Beirut time: encrypted backup of the database and the pictures.
+30 2 * * * cd /srv/mustafa-print/deploy && set -a && . ./.env && set +a && DATABASE_URL="postgres://$POSTGRES_USER:$POSTGRES_PASSWORD@127.0.0.1:5432/$POSTGRES_DB" MEDIA_DIR=$PWD/data/media BACKUP_DIR=$PWD/backups BACKUP_PASSPHRASE_FILE=/root/.mpe-backup-passphrase ./backup.sh >> /var/log/mpe-backup.log 2>&1
+# Every Sunday at 04:00: prove the newest backup restores. A failure here is the one email that must never be ignored.
+0 4 * * 0 cd /srv/mustafa-print/deploy && set -a && . ./.env && set +a && ADMIN_DATABASE_URL="postgres://$POSTGRES_USER:$POSTGRES_PASSWORD@127.0.0.1:5432/postgres" DATABASE_URL="postgres://$POSTGRES_USER:$POSTGRES_PASSWORD@127.0.0.1:5432/$POSTGRES_DB" MEDIA_DIR=$PWD/data/media BACKUP_DIR=$PWD/backups BACKUP_PASSPHRASE_FILE=/root/.mpe-backup-passphrase ./restore-check.sh >> /var/log/mpe-restore-check.log 2>&1 || echo "RESTORE CHECK FAILED on $(hostname)" | mail -s "Mustafa Print: backup restore check FAILED" "$ACME_EMAIL"
+# Copy the backups off the server (a server fire takes its own backups with it). Needs rclone configured once.
+0 3 * * * rclone copy /srv/mustafa-print/deploy/backups offsite:mustafa-print-backups --max-age 48h >> /var/log/mpe-offsite.log 2>&1

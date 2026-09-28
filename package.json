@@ -1,0 +1,26 @@
+{
+  "name": "mustafa-print-erp",
+  "private": true,
+  "description": "Print shop ERP: customer website, offline-first staff PWA, Node/Express API, PostgreSQL",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "concurrently -n api,worker,web,admin -c blue,cyan,green,magenta \"pnpm:dev:api\" \"pnpm:dev:worker\" \"pnpm:dev:web\" \"pnpm:dev:admin\"",
+    "dev:api": "pnpm --filter @mpe/api dev",
+    "dev:worker": "pnpm --filter @mpe/api dev:worker",
+    "dev:web": "pnpm --filter @mpe/web dev",
+    "dev:admin": "pnpm --filter @mpe/admin dev",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "db:up": "docker compose up -d db",
+    "db:migrate": "pnpm --filter @mpe/api db:migrate",
+    "db:seed": "pnpm --filter @mpe/api db:seed",
+    "db:erd": "pnpm --filter @mpe/api db:erd"
+  },
+  "packageManager": "pnpm@12.5.1",
+  "devDependencies": {
+    "concurrently": "^10.0.5"
+  }
+}
