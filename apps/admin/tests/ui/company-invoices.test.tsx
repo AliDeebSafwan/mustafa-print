@@ -21,8 +21,8 @@ vi.mock('../../src/content', async () => {
   }
 })
 
-import { CompanyInvoicesPage } from '../../src/pages/CompanyInvoicesPage'
-import { CompanyInvoicePage } from '../../src/pages/CompanyInvoicePage'
+import { CompanyInvoicesPage } from '../../src/pages/companies/CompanyInvoicesPage'
+import { CompanyInvoicePage } from '../../src/pages/companies/CompanyInvoicePage'
 import { renderAt, resetApp } from './harness'
 
 const order = (id: string, n: string, total: string) => ({ id, order_number: n, public_code: 'X', status: 'delivered', placed_at: '2026-09-01T10:00:00Z', currency: 'USD', net: total, tax_total: '0.00', total })

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import type { Locale } from "@mpe/shared";
 import { useCart } from "@/lib/cart";
-import { BagIcon } from "../icons";
+import { BagIcon } from "../ui/icons";
 
 /** The cart link: a bag with the item count. The word itself is shown when the screen has room, and always read out. */
 export function CartBadge({ lang, label }: { lang: Locale; label: string }) {

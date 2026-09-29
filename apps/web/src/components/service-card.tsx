@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Locale, PublicService } from "@mpe/shared";
-import { Picture } from "./picture";
+import { Picture } from "./ui/picture";
 
 /** A swatch chip: the picture over the name plate. `heading` follows the page's outline: h3 under a section heading
  *  (home), h2 directly under the page title (services). */

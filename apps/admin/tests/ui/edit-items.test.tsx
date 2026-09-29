@@ -8,7 +8,7 @@ const session = vi.hoisted(() => ({ role: 'receptionist', id: '018f0000-0000-700
 vi.mock('../../src/offline/request-sync', () => ({ requestSync: vi.fn() }))
 vi.mock('../../src/auth', async () => (await import('./harness')).authMock(session))
 
-import { EditOrderItemsPage } from '../../src/pages/EditOrderItemsPage'
+import { EditOrderItemsPage } from '../../src/pages/orders/EditOrderItemsPage'
 import { createCustomerLocally, createOrderLocally } from '../../src/offline/actions'
 import { db } from '../../src/offline/db'
 import { renderAt, resetApp } from './harness'

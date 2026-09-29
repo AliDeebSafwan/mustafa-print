@@ -26,7 +26,7 @@ vi.mock('../../src/content', async () => {
   }
 })
 
-import { CustomerAccountsPage } from '../../src/pages/CustomerAccountsPage'
+import { CustomerAccountsPage } from '../../src/pages/customers/CustomerAccountsPage'
 import { createCustomerLocally } from '../../src/offline/actions'
 import { renderAt, resetApp } from './harness'
 

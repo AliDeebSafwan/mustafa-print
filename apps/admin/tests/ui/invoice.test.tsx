@@ -26,7 +26,7 @@ vi.mock('../../src/content', async () => {
   }
 })
 
-import { InvoicePage } from '../../src/pages/InvoicePage'
+import { InvoicePage } from '../../src/pages/orders/InvoicePage'
 import { createCustomerLocally, createOrderLocally } from '../../src/offline/actions'
 import { db } from '../../src/offline/db'
 import { renderAt, resetApp } from './harness'

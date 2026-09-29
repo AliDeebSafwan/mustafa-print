@@ -19,8 +19,12 @@ Built to run on a single small VPS (budget: 30 USD/month), one branch today, man
 mustafa-print-erp/
 ├── apps/
 │   ├── web/           customer website
+│   │   └── src/components/   layout/ (page chrome) · ui/ (small pieces) · one folder per flow (cart, checkout, …)
 │   ├── admin/         staff app (works offline)
+│   │   └── src/pages/        one folder per area: orders, customers, companies, catalogue, reports, site, team
 │   └── api/           API and background worker; database migrations in api/db/
+│       ├── src/modules/      the work itself, one folder per area (orders, payments, messaging, …)
+│       └── src/routes/       thin HTTP layer, one file per mount point; `admin-*` and `public*` sort together
 ├── packages/shared/   rules all three share: statuses, permissions, money, sync
 ├── e2e/               end-to-end tests (the staff app's code against the real API)
 ├── deploy/            production server: Docker, Caddy, backups, restore

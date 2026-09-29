@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { PageHeader } from "@/components/page-header";
+import { PageHeader } from "@/components/layout/page-header";
 import { notFound } from "next/navigation";
 import { isLocale } from "@mpe/shared";
 import { getDictionary } from "@/lib/dictionaries";
 import { alternates } from "@/lib/seo";
 import { getSite, whatsappLink } from "@/lib/site";
-import { PhoneIcon, PinIcon, WhatsAppIcon } from "@/components/icons";
+import { PhoneIcon, PinIcon, WhatsAppIcon } from "@/components/ui/icons";
 
 export async function generateMetadata({ params }: PageProps<"/[lang]/contact">): Promise<Metadata> {
   const { lang } = await params;

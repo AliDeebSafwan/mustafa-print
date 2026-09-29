@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { PageHeader } from "@/components/page-header";
+import { PageHeader } from "@/components/layout/page-header";
 import { notFound } from "next/navigation";
 import { isLocale } from "@mpe/shared";
 import { ProductGrid } from "@/components/product-grid";

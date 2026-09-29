@@ -21,7 +21,7 @@ vi.mock('../../src/content', async () => {
   }
 })
 
-import { QuotesPage } from '../../src/pages/QuotesPage'
+import { QuotesPage } from '../../src/pages/orders/QuotesPage'
 import { createCustomerLocally } from '../../src/offline/actions'
 import { db } from '../../src/offline/db'
 import { renderAt, resetApp } from './harness'

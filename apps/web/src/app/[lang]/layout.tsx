@@ -2,14 +2,14 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { LOCALES, dirFor, isLocale } from "@mpe/shared";
 import "../globals.css";
-import { ColorBar } from "@/components/color-bar";
+import { ColorBar } from "@/components/ui/color-bar";
 import { CartProvider } from "@/lib/cart";
-import { SiteFooter } from "@/components/site-footer";
-import { SiteHeader } from "@/components/site-header";
+import { SiteFooter } from "@/components/layout/site-footer";
+import { SiteHeader } from "@/components/layout/site-header";
 import { getDictionary } from "@/lib/dictionaries";
 import { siteUrl } from "@/lib/seo";
 import { getSite, whatsappLink } from "@/lib/site";
-import { WhatsAppFab } from "@/components/whatsapp-fab";
+import { WhatsAppFab } from "@/components/layout/whatsapp-fab";
 
 export function generateStaticParams() {
   return LOCALES.map((lang) => ({ lang }));

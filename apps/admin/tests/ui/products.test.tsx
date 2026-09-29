@@ -14,7 +14,7 @@ vi.mock('../../src/content', async () => {
   return { ContentError, contentApi: { media: { list: async () => pictures }, services: { list: async () => services } } }
 })
 
-import { ProductsPage } from '../../src/pages/ProductsPage'
+import { ProductsPage } from '../../src/pages/catalogue/ProductsPage'
 import { createProduct } from '../../src/offline/actions'
 import { db } from '../../src/offline/db'
 import { renderAt, resetApp } from './harness'

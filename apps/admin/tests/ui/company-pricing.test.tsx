@@ -8,8 +8,8 @@ const session = vi.hoisted(() => ({ role: 'admin', id: '018f0000-0000-7000-8000-
 vi.mock('../../src/offline/request-sync', () => ({ requestSync: vi.fn() }))
 vi.mock('../../src/auth', async () => (await import('./harness')).authMock(session))
 
-import { CompanyPricingPage } from '../../src/pages/CompanyPricingPage'
-import { NewOrderPage } from '../../src/pages/NewOrderPage'
+import { CompanyPricingPage } from '../../src/pages/companies/CompanyPricingPage'
+import { NewOrderPage } from '../../src/pages/orders/NewOrderPage'
 import { createCustomerLocally } from '../../src/offline/actions'
 import { db } from '../../src/offline/db'
 import { renderAt, resetApp } from './harness'

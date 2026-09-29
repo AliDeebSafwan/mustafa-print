@@ -8,7 +8,7 @@ const session = vi.hoisted(() => ({ role: 'warehouse_manager', id: '018f0000-000
 vi.mock('../../src/offline/request-sync', () => ({ requestSync: vi.fn() }))
 vi.mock('../../src/auth', async () => (await import('./harness')).authMock(session))
 
-import { InventoryPage } from '../../src/pages/InventoryPage'
+import { InventoryPage } from '../../src/pages/catalogue/InventoryPage'
 import { createInventoryItem } from '../../src/offline/actions'
 import { db } from '../../src/offline/db'
 import { renderAt, resetApp } from './harness'

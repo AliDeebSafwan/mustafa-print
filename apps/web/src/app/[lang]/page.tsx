@@ -3,14 +3,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { preload } from "react-dom";
 import { isLocale } from "@mpe/shared";
-import { CropMarks } from "@/components/crop-marks";
+import { CropMarks } from "@/components/ui/crop-marks";
 import { GalleryGrid } from "@/components/gallery-grid";
-import { Picture } from "@/components/picture";
+import { Picture } from "@/components/ui/picture";
 import { ServiceCard } from "@/components/service-card";
 import { TrackForm } from "@/components/track-form";
 import { getDictionary } from "@/lib/dictionaries";
 import { alternates, siteUrl } from "@/lib/seo";
-import { CashIcon, ProofIcon, TrackIcon, WhatsAppIcon } from "@/components/icons";
+import { CashIcon, ProofIcon, TrackIcon, WhatsAppIcon } from "@/components/ui/icons";
 import { getGallery, getServices, getSite, imageAttrs, publicApiUrl, whatsappLink } from "@/lib/site";
 
 export async function generateMetadata({ params }: PageProps<"/[lang]">): Promise<Metadata> {

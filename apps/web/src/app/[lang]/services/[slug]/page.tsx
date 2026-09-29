@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { isLocale } from "@mpe/shared";
 import { GalleryGrid } from "@/components/gallery-grid";
-import { Picture } from "@/components/picture";
+import { Picture } from "@/components/ui/picture";
 import { ProductGrid } from "@/components/product-grid";
 import { getDictionary } from "@/lib/dictionaries";
 import { fill } from "@/lib/i18n";

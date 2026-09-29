@@ -1,6 +1,6 @@
 import type { PublicProduct } from "@mpe/shared";
 import { AddToCart } from "@/components/cart/add-to-cart";
-import { Picture } from "@/components/picture";
+import { Picture } from "@/components/ui/picture";
 import type { Dictionary } from "@/lib/dictionaries";
 import { fill } from "@/lib/i18n";
 import { priceLine } from "@/lib/product-price";
