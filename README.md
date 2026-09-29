@@ -11,7 +11,26 @@ Built to run on a single small VPS (budget: 30 USD/month), one branch today, man
 | Shared rules (status machine, RBAC, money arithmetic, phone numbers, sync contract) | `packages/shared` | TypeScript |
 | End-to-end tests: the real staff-app code against the real API and PostgreSQL | `e2e` | Vitest |
 | Database migrations, schema tests | `apps/api/db` | plain SQL (source of truth) |
-| Design notes, ERD, data dictionary | `docs/` | Mermaid + Markdown |
+| Plans, guides, reports, database design | `docs/` (start at `docs/README.md`) | Markdown, PDF |
+
+## Where things are
+
+```
+mustafa-print-erp/
+├── apps/
+│   ├── web/           customer website
+│   ├── admin/         staff app (works offline)
+│   └── api/           API and background worker; database migrations in api/db/
+├── packages/shared/   rules all three share: statuses, permissions, money, sync
+├── e2e/               end-to-end tests (the staff app's code against the real API)
+├── deploy/            production server: Docker, Caddy, backups, restore
+├── docs/              plans, guides, reports (index: docs/README.md)
+└── .github/           automatic checks on every change
+```
+
+The files at the top level stay there because the tools look for them exactly there: `package.json`, `pnpm-workspace.yaml` and
+`pnpm-lock.yaml` (the package manager), `docker-compose.yml` (the local database), `.env.example` (copy it to `.env`), `.nvmrc`
+(the Node version), `.gitignore` and `.dockerignore`.
 
 ## Quick start
 
@@ -29,6 +48,8 @@ pnpm db:up                                 # PostgreSQL 16
 pnpm db:migrate                            # applies db/migrations/*.sql (checksummed, idempotent)
 pnpm db:seed                               # 5 roles, main branch, first admin (SEED_ADMIN_EMAIL / _PASSWORD), 36 default message templates
 
+pnpm dev           # all four below at once, with labelled output
+
 pnpm dev:api        # http://localhost:4000   (GET /health)
 pnpm dev:worker     # sends queued notifications (console provider by default: prints instead of sending)
 pnpm dev:web        # http://localhost:3000   (redirects to /ar or /en)
@@ -45,13 +66,13 @@ Try it: create an order in the database (or the admin's "Add a test order" butto
 | `pnpm typecheck` / `pnpm test` / `pnpm build` | all packages |
 | `TEST_DATABASE_URL=postgres://user:pass@localhost:5432/postgres pnpm test` | also runs the PostgreSQL integration tests and the end-to-end shop-day scenarios (`e2e`). Each test file creates and drops its own fresh, migrated database, so the role needs `CREATEDB` |
 | `psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f apps/api/db/tests/smoke.sql` | schema rule tests (rolls back) |
-| `pnpm db:erd` | regenerates `docs/erd.mermaid` and `docs/DATA-DICTIONARY.md` from the live schema |
+| `pnpm db:erd` | regenerates `docs/database/erd.mermaid` and `docs/database/DATA-DICTIONARY.md` from the live schema |
 | `pnpm --filter @mpe/api db:pull` | regenerates the typed Drizzle schema after a migration (copy `schema.ts` to `src/db/`) |
 | `pnpm --filter @mpe/api wa:templates` | prints the WhatsApp templates to submit for approval in Meta Business Manager |
 
 ## Rules of the road
 
-- **Migrations are append-only.** Never edit an applied file (the runner refuses); add `0010_...sql`.
+- **Migrations are append-only.** Never edit an applied file (the runner refuses); add the next numbered file.
 - **Statuses, permissions and the sync contract (including every offline mutation payload) live in `packages/shared`.** The API validates with the same schemas the staff app is typed against.
 - **Money is `numeric` in the database and a decimal string in JSON.** Never use floats for prices. The staff app previews totals with `packages/shared/src/money.ts`; `apps/api/tests/money-contract.integration.test.ts` checks it against PostgreSQL on hundreds of random orders, so a cashier never sees a different total from the one stored.
 - **The staff app never queues what the server is certain to reject.** Every offline payload is validated against the shared schema before it is saved (`newMutation`).
@@ -88,23 +109,11 @@ is commercial. Cloudflare Pages (static) and a VPS both work. Check current prov
 
 ## Status
 
-Done and tested against real PostgreSQL 16: database schema (19 tables), migration runner, seed, messaging pipeline
-(templates, consent, dedupe, outbox worker, retries, WhatsApp/Email providers, signed status webhook), public order tracking,
-customer website (ar/en, RTL/LTR), **authentication** (argon2id, short access token + rotating refresh cookie with theft detection,
-login throttling, role permissions enforced on every request), **offline sync endpoints** (`push` with idempotency, field-level conflict
-detection and role/branch checks; `pull` with per-role scoping and safe paging), and the **staff app**: sign-in, new customer / new order
-(catalogue or custom items, delivery, discounts, exact totals), order screen with payments and refunds, status changes limited to what
-the user's role may do, printable QR label, order search, barcode scan. Everything above works offline and syncs when the connection returns.
+Built and tested (627 automated tests, run against a real PostgreSQL): the staff app, the API and its background worker, offline
+sync, the customer website (redesigned, with measured speed and accessibility), invoices, company accounts, quotes, proofs,
+reports, CSV import, the owner's daily email, and optional virus scanning of uploads.
 
-Not verified in a real browser yet: the screens are covered by jsdom UI tests and the sync path by end-to-end tests, but layout and the
-camera/print behaviour must be checked on your actual tablets and phones (the sandbox had no browser).
+Waiting on outside parties: WhatsApp (Meta approval), SMS and email from your own domain, Whish Pay (its documentation), and the
+production server and domain. The deployment files are ready but have not yet run on a real server.
 
-Next milestones, in order:
-1. Staff screens still missing: courier assignment, conflict review (the queue exists, there is no screen), stock movements, customer
-   editing; REST endpoints for dashboards/reports; automatic stock deduction from `product_materials`.
-2. Artwork upload (`order_files` + object storage with signed URLs), invoices (HTML → PDF).
-3. Whish Pay adapter (needs the merchant API documentation and credentials), SMS provider, production Docker/Caddy/backup files.
-4. Initial data setup. The project starts from scratch (there is no old system to migrate): products, prices and opening stock are entered in the admin screens, with an optional CSV import (see `docs/DB-DESIGN.md` section 6).
-
-The full plan to the end of the project (milestones, decisions needed from the owner, risks, definition of done) is in `docs/ROADMAP.md` (Arabic).
-See `docs/DB-DESIGN.md` (Arabic) for the reasoning behind the schema and the offline-sync design.
+The full plan, the decisions still needed and what is left: `docs/ROADMAP.md` (Arabic).

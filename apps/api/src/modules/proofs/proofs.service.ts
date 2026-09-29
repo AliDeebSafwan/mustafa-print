@@ -7,6 +7,7 @@ import { withTransaction } from '../../db/pool';
 import { HttpError } from '../../http-error';
 import type { AuthContext } from '../auth/types';
 import type { MediaStorage } from '../media/storage';
+import { assertFileIsClean, type FileScanner } from '../media/virus-scan';
 import { detectDesignKind } from '../orders/design-files';
 
 type Row = Record<string, unknown>;
@@ -22,7 +23,7 @@ const sha256Of = (path: string) => new Promise<string>((resolve, reject) => {
 
 export type ProofsService = ReturnType<typeof createProofsService>;
 
-export function createProofsService({ pool, storage, publicWebUrl }: { pool: Pool; storage: MediaStorage; publicWebUrl: string }) {
+export function createProofsService({ pool, storage, scanner, publicWebUrl }: { pool: Pool; storage: MediaStorage; scanner: FileScanner; publicWebUrl: string }) {
   const linkOf = (code: string) => `${publicWebUrl}/ar/proof/${code}`;
 
   /** Moves the order with a history row, as the server itself (the proof upload or the customer's answer did it). */
@@ -40,6 +41,7 @@ export function createProofsService({ pool, storage, publicWebUrl }: { pool: Poo
     try {
       const kind = await detectDesignKind(file.path);
       if (!kind || !VIEWABLE.has(kind)) throw new HttpError(400, 'invalid_request', 'unsupported_file');
+      await assertFileIsClean(scanner, file.path);
       const sha256 = await sha256Of(file.path);
       const id = randomUUID();
       storedKey = `proofs/${id}.${kind}`;

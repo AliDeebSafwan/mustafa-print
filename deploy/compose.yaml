@@ -14,6 +14,7 @@ x-api: &api
     WEB_REVALIDATE_URL: http://web:3000/api/revalidate
     WEB_REVALIDATE_SECRET: ${REVALIDATE_SECRET}
     MEDIA_DIR: /data/media
+    CLAMAV_HOST: ${CLAMAV_HOST:-}      # blank = no virus scanning; set to "clamav" (and enable the profile) to scan uploads
   restart: unless-stopped
 
 services:
@@ -59,6 +60,18 @@ services:
     depends_on:
       migrate: { condition: service_completed_successfully }
 
+  # Scans every design file and proof before it is kept. OPT-IN because it needs about 1.5 GB of memory of its own:
+  # enable with COMPOSE_PROFILES=scan and CLAMAV_HOST=clamav in .env (see README). With it on, an upload the scanner
+  # cannot check is refused, never accepted unchecked. Signatures update themselves and are kept in a volume so a
+  # restart does not download them again.
+  clamav:
+    image: clamav/clamav:1.4
+    profiles: [scan]
+    restart: unless-stopped
+    volumes:
+      - ./clamd.conf:/etc/clamav/clamd.conf:ro
+      - clamav_db:/var/lib/clamav
+
   web:
     build: { context: .., dockerfile: apps/web/Dockerfile }
     image: mustafa-print/web:latest
@@ -90,3 +103,6 @@ services:
     volumes:
       - ./data/caddy:/data
     depends_on: [api, web]
+
+volumes:
+  clamav_db:

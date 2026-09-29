@@ -28,7 +28,7 @@ export function ProofsSection({ orderId, customerPhone, canUpload }: { orderId: 
       await reload()
     } catch (err) {
       const detail = err instanceof ContentError ? err.detail : undefined
-      setMessage({ kind: 'error', text: detail === 'unsupported_file' ? t('proofs.unsupported') : detail === 'order_past_design' ? t('proofs.pastDesign')
+      setMessage({ kind: 'error', text: detail === 'unsupported_file' ? t('proofs.unsupported') : detail === 'infected_file' ? t('proofs.infected') : detail === 'scanner_unavailable' ? t('proofs.scannerDown') : detail === 'order_past_design' ? t('proofs.pastDesign')
         : detail === 'file_too_large' ? t('proofs.tooLarge') : err instanceof ContentError && err.code === 'offline' ? t('site.error.offline') : t('common.error') })
     } finally {
       setBusy(false)

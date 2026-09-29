@@ -104,7 +104,7 @@ const client = (baseUrl: string, auth: { token?: string; cookie?: string } = {})
 export const jsonOf = <T = Record<string, any>>(res: Response): Promise<T> => res.json() as Promise<T>; // eslint-disable-line @typescript-eslint/no-explicit-any
 export const cookieFrom = (res: Response): string | undefined => res.headers.getSetCookie().find((c) => c.startsWith('mpe_rt='))?.split(';')[0];
 
-export async function startTestServer(overrides: Record<string, string> = {}, opts: { pushAgent?: import('node:https').Agent; pushAllowedHosts?: readonly string[] } = {}): Promise<TestServer> {
+export async function startTestServer(overrides: Record<string, string> = {}, opts: { pushAgent?: import('node:https').Agent; pushAllowedHosts?: readonly string[]; scanner?: import('../../src/modules/media/virus-scan').FileScanner } = {}): Promise<TestServer> {
   const db = await createTestDatabase();
   const fixtures = await seedFixtures(db.pool);
   const mediaDir = await mkdtemp(path.join(tmpdir(), 'mpe-media-'));
@@ -126,7 +126,7 @@ export async function startTestServer(overrides: Record<string, string> = {}, op
     if (!link) throw new Error(`no email with a link was sent to ${to}`);
     return link;
   };
-  const { app } = createApp({ pool: db.pool, env, log: pino({ level: process.env.LOG_LEVEL === "debug" ? "debug" : "silent" }), mailer, pushAgent: opts.pushAgent, pushAllowedHosts: opts.pushAllowedHosts });
+  const { app } = createApp({ pool: db.pool, env, log: pino({ level: process.env.LOG_LEVEL === "debug" ? "debug" : "silent" }), mailer, pushAgent: opts.pushAgent, pushAllowedHosts: opts.pushAllowedHosts, scanner: opts.scanner });
   const server = await new Promise<Server>((resolve) => { const s = app.listen(0, '127.0.0.1', () => resolve(s)); });
   const baseUrl = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
 

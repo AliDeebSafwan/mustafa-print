@@ -1,10 +1,11 @@
 import type { Locale } from "@mpe/shared";
 import type { LegalSection } from "@/lib/legal";
 import { LEGAL_UPDATED } from "@/lib/legal";
+import { dateLocale } from "@/lib/format";
 
 /** A legal page: plain, readable, printable. Text comes from lib/legal.ts; the shop's identity from settings. */
 export function LegalPage({ title, updatedLabel, sections, lang }: { title: string; updatedLabel: string; sections: LegalSection[]; lang: Locale }) {
-  const date = new Intl.DateTimeFormat(lang === "ar" ? "ar-LB" : "en-GB", { dateStyle: "long" }).format(new Date(`${LEGAL_UPDATED}T12:00:00Z`));
+  const date = new Intl.DateTimeFormat(dateLocale(lang), { dateStyle: "long" }).format(new Date(`${LEGAL_UPDATED}T12:00:00Z`));
   return (
     <article className="mx-auto max-w-3xl pt-6">
       <h1 className="text-4xl font-extrabold">{title}</h1>

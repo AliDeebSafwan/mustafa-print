@@ -848,7 +848,9 @@
       "approved": "The customer approved the proof. Move the order to printing when ready.",
       "changes_requested": "The customer asked for changes to the proof. See their comment below."
     },
-    "open": "Send a proof to the customer"
+    "open": "Send a proof to the customer",
+    "infected": "The security check rejected this file, so it was not uploaded. Do not send it to the customer; scan your device and export it again.",
+    "scannerDown": "The file could not be checked just now, so it was not uploaded. Try again shortly, and tell the owner if it keeps happening."
   },
   "company": {
     "pricing": {

@@ -21,6 +21,7 @@ import { buildProviders } from './modules/messaging/providers';
 import type { ChannelProvider } from './modules/messaging/types';
 import { customerAccountRouter } from './routes/customer-account';
 import { createWebOrderService } from './modules/orders/web-orders.service';
+import { createClamdScanner, disabledScanner, type FileScanner } from './modules/media/virus-scan';
 import { createInvoiceService } from './modules/orders/invoices.service';
 import { adminOrdersRouter } from './routes/admin-orders';
 import { adminTeamRouter } from './routes/admin-team';
@@ -43,7 +44,7 @@ import { syncRouter } from './routes/sync';
 import { whatsappWebhookRouter } from './routes/whatsapp-webhook';
 
 /** `mailer` replaces the configured email provider (tests capture the links it would send). */
-export function createApp(deps: { pool: Pool; env: Env; log: Logger; mailer?: ChannelProvider; pushAgent?: Agent; pushAllowedHosts?: readonly string[] }) {
+export function createApp(deps: { pool: Pool; env: Env; log: Logger; mailer?: ChannelProvider; pushAgent?: Agent; pushAllowedHosts?: readonly string[]; scanner?: FileScanner }) {
   const { pool, env, log } = deps;
   const app = express();
 
@@ -70,6 +71,8 @@ export function createApp(deps: { pool: Pool; env: Env; log: Logger; mailer?: Ch
   app.use('/api/v1/admin/reports', adminReportsRouter({ reports, authenticate: requireLogin }));
   app.use('/api/v1/admin/customer-accounts', adminCustomerAccountsRouter({ accounts: createCustomerAccountsAdminService({ pool }), authenticate: requireLogin }));
   const storage = localDiskStorage(env.MEDIA_DIR);
+  const scanner = deps.scanner ?? (env.CLAMAV_HOST ? createClamdScanner({ host: env.CLAMAV_HOST, port: env.CLAMAV_PORT, timeoutMs: env.CLAMAV_TIMEOUT_MS }) : disabledScanner);
+  if (!scanner.enabled) log.warn('no virus scanner configured (CLAMAV_HOST): uploaded files are checked by type only');
   const content = createContentService({ pool, storage, onPublicChange: refreshWebsite });
   const customers = createCustomerAuthService({
     pool, siteUrl: env.PUBLIC_WEB_URL, branchCode: env.PUBLIC_BRANCH_CODE,
@@ -78,7 +81,7 @@ export function createApp(deps: { pool: Pool; env: Env; log: Logger; mailer?: Ch
   const push = createPushService({ pool, publicKey: env.VAPID_PUBLIC_KEY, privateKey: env.VAPID_PRIVATE_KEY, subject: env.VAPID_SUBJECT, agent: deps.pushAgent, extraAllowedHosts: deps.pushAllowedHosts });
   app.use('/api/v1/admin/push', pushRouter({ push, authenticate: requireLogin }));
   app.use('/api/v1/admin/company-invoices', companyInvoicesRouter({ invoices: createCompanyInvoiceService({ pool }), authenticate: requireLogin }));
-  const webOrders = createWebOrderService({ pool, storage, publicWebUrl: env.PUBLIC_WEB_URL, push });
+  const webOrders = createWebOrderService({ pool, storage, scanner, publicWebUrl: env.PUBLIC_WEB_URL, push });
   const invoices = createInvoiceService({ pool });
   app.use('/api/v1/public/account', customerAccountRouter({ service: customers, orders: webOrders, cookieSecure: env.COOKIE_SECURE, allowedOrigins: [env.PUBLIC_WEB_URL] }));
   app.use('/api/v1/admin/orders', adminOrdersRouter({ orders: webOrders, invoices, authenticate: requireLogin }));
@@ -86,7 +89,7 @@ export function createApp(deps: { pool: Pool; env: Env; log: Logger; mailer?: Ch
   const quotes = createQuotesService({ pool, publicWebUrl: env.PUBLIC_WEB_URL });
   app.use('/api/v1/admin/quotes', adminQuotesRouter({ quotes, authenticate: requireLogin }));
   app.use('/api/v1/public/quotes', publicQuotesRouter({ quotes }));
-  const proofs = createProofsService({ pool, storage, publicWebUrl: env.PUBLIC_WEB_URL });
+  const proofs = createProofsService({ pool, storage, scanner, publicWebUrl: env.PUBLIC_WEB_URL });
   app.use('/api/v1/admin/orders', adminProofsRouter({ proofs, authenticate: requireLogin }));
   app.use('/api/v1/public/proofs', publicProofsRouter({ proofs }));
   app.use('/api/v1/public', publicRouter(pool));

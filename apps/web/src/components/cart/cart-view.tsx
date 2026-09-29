@@ -12,7 +12,7 @@ import type { Dictionary } from "@/lib/dictionaries";
  * The cart's contents. The cart itself only remembers product ids and quantities, so this fetches the live
  * catalogue to show names, pictures and current prices — and drops any line whose product disappeared.
  */
-export function CartView({ lang, t, checkoutLabel, apiBase }: { lang: Locale; t: Dictionary["cart"]; checkoutLabel: string; apiBase: string }) {
+export function CartView({ lang, t, checkoutLabel, apiBase, currency }: { lang: Locale; t: Dictionary["cart"]; checkoutLabel: string; apiBase: string; currency: string }) {
   const cart = useCart();
   const [products, setProducts] = useState<PublicProduct[] | null>(null);
 
@@ -40,7 +40,7 @@ export function CartView({ lang, t, checkoutLabel, apiBase }: { lang: Locale; t:
       <div className="mt-8">
         {droppedAny && <p role="alert" className="mb-4 border-s-4 border-magenta bg-tint p-3 text-sm">{t.unavailable}</p>}
         <p className="text-muted">{t.empty}</p>
-        <Link href={`/${lang}/products`} className="mt-4 inline-block bg-ink px-5 py-3 font-bold text-paper">{t.browse}</Link>
+        <Link href={`/${lang}/products`} className="btn btn-ink mt-4">{t.browse}</Link>
       </div>
     );
   }
@@ -66,26 +66,26 @@ export function CartView({ lang, t, checkoutLabel, apiBase }: { lang: Locale; t:
                 <div className="mt-2 flex flex-wrap items-center gap-3">
                   <label className="flex items-center gap-2 text-sm font-semibold">
                     {t.quantity}
-                    <input type="text" inputMode="decimal" dir="ltr" className="w-20 border border-ink px-2 py-1.5 text-center"
+                    <input type="text" inputMode="decimal" dir="ltr" className="input !w-20 !min-h-11 text-center"
                       value={line.quantity} onChange={(e) => cart.setQuantity(product.id, cleanQuantity(e.target.value))} />
                   </label>
                   <button type="button" className="text-sm font-semibold text-magenta underline underline-offset-4" onClick={() => cart.remove(product.id)}>{t.remove}</button>
                 </div>
-                {belowMin && <p role="alert" className="mt-1 text-xs font-semibold text-magenta">{t.belowMinimum.replace("{{n}}", product.minQuantity)}</p>}
-                <input type="text" className="mt-2 w-full border border-rule px-2 py-1.5 text-sm" placeholder={t.notes}
+                {belowMin && <p role="alert" className="mt-1 text-xs font-semibold text-magenta">{t.belowMinimum.replace("{{n}}", String(Number(product.minQuantity)))}</p>}
+                <input type="text" className="input mt-2 !min-h-11 !text-sm" placeholder={t.notes} aria-label={t.notes}
                   value={line.notes} onChange={(e) => cart.setNotes(product.id, e.target.value)} />
               </div>
-              <p className="shrink-0 self-start font-bold sm:self-center" dir="ltr">{lineTotal(product, line.quantity).toFixed(2)}</p>
+              <p className="shrink-0 self-start font-bold sm:self-center" dir="ltr">{lineTotal(product, line.quantity).toFixed(2)} {currency}</p>
             </li>
           );
         })}
       </ul>
       <div className="mt-6 flex items-center justify-between">
         <span className="text-lg font-bold">{t.subtotal}</span>
-        <span className="text-lg font-extrabold" dir="ltr">{subtotal.toFixed(2)}</span>
+        <span className="font-display text-2xl font-extrabold" dir="ltr">{subtotal.toFixed(2)} <span className="text-base">{currency}</span></span>
       </div>
       <p className="mt-1 text-xs text-muted">{t.subtotalNote}</p>
-      <Link href={`/${lang}/checkout`} className="mt-4 block w-full bg-ink px-5 py-3 text-center font-bold text-paper sm:inline-block sm:w-auto">{checkoutLabel}</Link>
+      <Link href={`/${lang}/checkout`} className="btn btn-order mt-4 w-full sm:w-auto">{checkoutLabel}</Link>
     </div>
   );
 }

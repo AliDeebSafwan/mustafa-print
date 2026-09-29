@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { ORDER_STATUS_LABELS, PUBLIC_CODE_RE, isLocale, isOrderStatus, type Locale } from "@mpe/shared";
 import { getDictionary } from "@/lib/dictionaries";
 import { fetchTrackedOrder } from "@/lib/api";
+import { dateLocale, formatMoney } from "@/lib/format";
 
 export const metadata: Metadata = { robots: { index: false, follow: false } };  // tracking links are private
 
@@ -31,14 +32,14 @@ export default async function TrackPage({ params }: PageProps<"/[lang]/track/[co
       <section className="py-16">
         <h1 className="text-3xl font-extrabold">{dict.order.notFound.title}</h1>
         <p className="mt-3 text-lg text-muted">{dict.order.notFound.text}</p>
-        <Link href={`/${lang}#track`} className="mt-8 inline-block bg-ink px-6 py-3 font-bold text-white hover:bg-magenta">{dict.order.back}</Link>
+        <Link href={`/${lang}#track`} className="btn btn-ink mt-8">{dict.order.back}</Link>
       </section>
     );
   }
 
   const { order, timeline, items } = data;
-  const when = new Intl.DateTimeFormat(lang === "ar" ? "ar-u-nu-latn" : "en", { dateStyle: "medium", timeStyle: "short" });
-  const money = new Intl.NumberFormat(lang === "ar" ? "ar-u-nu-latn" : "en", { style: "currency", currency: order.currency });
+  const when = new Intl.DateTimeFormat(dateLocale(lang), { dateStyle: "medium", timeStyle: "short" });
+  const money = { format: (v: number) => formatMoney(v, order.currency, lang) };
   const cancelled = order.status === "cancelled";
   const stage = stageOf(order.status);
 
@@ -86,7 +87,7 @@ export default async function TrackPage({ params }: PageProps<"/[lang]/track/[co
             ))}
           </ul>
           <dl className="mt-6 space-y-2">
-            <div className="flex justify-between"><dt className="text-muted">{order.delivery_fee_pending ? dict.order.totalPending : dict.order.total}</dt><dd className="font-bold">{money.format(Number(order.total))}</dd></div>
+            <div className="flex justify-between"><dt className="text-muted">{order.delivery_fee_pending ? dict.order.totalPending : dict.order.total}</dt><dd className="font-bold" dir="ltr">{money.format(Number(order.total))}</dd></div>
             <div className="flex justify-between"><dt className="text-muted">{dict.order.payment[order.payment_status]}</dt><dd>{dict.order.fulfillment[order.fulfillment_type]}</dd></div>
           </dl>
           {order.delivery_fee_pending && <p className="mt-4 border-s-4 border-rule bg-tint p-3 text-sm">{dict.order.deliveryFeePending}</p>}

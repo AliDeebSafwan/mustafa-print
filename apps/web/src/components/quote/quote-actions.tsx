@@ -49,7 +49,7 @@ export function QuoteActions({ code, lang, t }: { code: string; lang: Locale; t:
   return (
     <div className="mt-6 flex flex-col gap-3 print:hidden">
       {error && <p role="alert" className="font-semibold text-magenta">{error}</p>}
-      <button type="button" className="bg-ink px-5 py-3 font-bold text-paper disabled:opacity-50" disabled={busy} onClick={() => void accept()}>
+      <button type="button" className="btn btn-order" disabled={busy} onClick={() => void accept()}>
         {busy && !declining ? t.accepting : t.accept}
       </button>
       {!declining ? (
@@ -57,8 +57,8 @@ export function QuoteActions({ code, lang, t }: { code: string; lang: Locale; t:
       ) : (
         <div className="flex flex-col gap-2 border border-rule p-3">
           <label className="text-sm font-semibold" htmlFor="decline-reason">{t.declineReason}</label>
-          <textarea id="decline-reason" className="border border-ink px-3 py-2" rows={2} value={reason} onChange={(e) => setReason(e.target.value)} maxLength={1000} />
-          <button type="button" className="self-start border border-ink px-4 py-2 font-semibold disabled:opacity-50" disabled={busy} onClick={() => void decline()}>{t.confirmDecline}</button>
+          <textarea id="decline-reason" className="input" rows={2} value={reason} onChange={(e) => setReason(e.target.value)} maxLength={1000} />
+          <button type="button" className="btn btn-outline btn-sm self-start" disabled={busy} onClick={() => void decline()}>{t.confirmDecline}</button>
         </div>
       )}
     </div>

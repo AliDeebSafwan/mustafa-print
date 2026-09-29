@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { PageHeader } from "@/components/page-header";
 import { notFound } from "next/navigation";
 import { isLocale } from "@mpe/shared";
 import { ProductGrid } from "@/components/product-grid";
@@ -20,12 +21,13 @@ export default async function ProductsPage({ params }: PageProps<"/[lang]/produc
   const currency = site?.currency ?? "USD";
 
   return (
-    <section className="pt-6">
-      <h1 className="text-4xl font-extrabold">{dict.products.title}</h1>
-      <p className="mt-3 text-lg text-muted">{dict.products.intro}</p>
+    <>
+      <PageHeader title={dict.products.title} intro={dict.products.intro} />
+      <section className="mt-10">
       {products.length === 0 ? <p className="mt-10 text-muted">{dict.products.empty}</p> : (
-        <div className="mt-8"><ProductGrid products={products} dict={dict} currency={currency} whatsapp={site?.whatsapp ?? null} /></div>
+        <div className="mt-8"><ProductGrid products={products} dict={dict} currency={currency} whatsapp={site?.whatsapp ?? null} heading="h2" priorityFirst /></div>
       )}
     </section>
+    </>
   );
 }

@@ -31,31 +31,39 @@ export default async function ServicePage({ params }: PageProps<"/[lang]/service
   const currency = site?.currency ?? "USD";
 
   return (
-    <article className="pt-6">
-      <div className="grid gap-10 md:grid-cols-2">
-        <div>
-          <h1 className="text-4xl font-extrabold">{service.title}</h1>
-          {service.summary && <p className="mt-4 text-lg leading-8 text-muted">{service.summary}</p>}
-          {service.body && <div className="mt-6 leading-8 whitespace-pre-line">{service.body}</div>}
-          {site?.whatsapp && (
-            <a className="mt-8 inline-block bg-ink px-5 py-3 font-bold text-paper" target="_blank" rel="noopener noreferrer"
-              href={whatsappLink(site.whatsapp, fill(dict.services.askMessage, { name: service.title }))}>{dict.services.ask}</a>
+    <>
+      <div className="full bg-stock py-10 sm:py-14">
+        <div className="grid items-center gap-8 md:grid-cols-2 md:gap-12">
+          <div>
+            <h1 className="t-page">{service.title}</h1>
+            {service.summary && <p className="t-lead mt-4">{service.summary}</p>}
+            {site?.whatsapp && (
+              <a className="btn btn-ink mt-7" target="_blank" rel="noopener noreferrer"
+                href={whatsappLink(site.whatsapp, fill(dict.services.askMessage, { name: service.title }))}>{dict.services.ask}</a>
+            )}
+          </div>
+          {service.image && (
+            <div className="overflow-hidden rounded-2xl shadow-[0_30px_50px_-28px_rgba(14,23,38,.5)]">
+              <Picture image={service.image} sizes="(min-width: 768px) 50vw, 100vw" className="aspect-[4/3] w-full object-cover" priority />
+            </div>
           )}
         </div>
-        {service.image && <Picture image={service.image} sizes="(min-width: 768px) 50vw, 100vw" className="w-full bg-tint object-cover" priority />}
       </div>
+      <article className="mt-12">
+      {service.body && <div className="max-w-2xl text-lg leading-9 whitespace-pre-line">{service.body}</div>}
       {products.length > 0 && (
-        <section className="mt-16">
-          <h2 className="text-2xl font-extrabold">{dict.services.order}</h2>
-          <div className="mt-6"><ProductGrid products={products} dict={dict} currency={currency} whatsapp={site?.whatsapp ?? null} /></div>
+        <section className="mt-14">
+          <h2 className="t-section !text-[1.75rem]">{dict.services.order}</h2>
+          <div className="mt-7"><ProductGrid products={products} dict={dict} currency={currency} whatsapp={site?.whatsapp ?? null} /></div>
         </section>
       )}
       {work.length > 0 && (
         <section className="mt-16">
-          <h2 className="text-2xl font-extrabold">{dict.services.related}</h2>
-          <div className="mt-6"><GalleryGrid items={work} labels={dict.gallery} apiBase={publicApiUrl()} /></div>
+          <h2 className="t-section !text-[1.75rem]">{dict.services.related}</h2>
+          <div className="mt-7"><GalleryGrid items={work} labels={dict.gallery} apiBase={publicApiUrl()} /></div>
         </section>
       )}
-    </article>
+      </article>
+    </>
   );
 }

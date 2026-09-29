@@ -1,30 +1,38 @@
 import Link from "next/link";
 import type { Locale } from "@mpe/shared";
 import type { Dictionary } from "@/lib/dictionaries";
+import { BrandMark } from "./brand-mark";
 import { CartBadge } from "./cart/cart-badge";
 import { LocaleSwitch } from "./locale-switch";
+import { MobileMenu } from "./mobile-menu";
 
 const LINKS = ["services", "gallery", "products", "contact"] as const;
 
-/** The top of every page. On phones the links wrap onto a second row rather than hiding behind a menu button. */
+/** The top of every page: the name, the four places people go, and (on phones) one menu button instead of two rows of links. */
 export function SiteHeader({ lang, dict }: { lang: Locale; dict: Dictionary }) {
+  const items = [
+    ...LINKS.map((key) => ({ href: `/${lang}/${key}`, label: dict.nav[key] })),
+    { href: `/${lang}#track`, label: dict.nav.track },
+    { href: `/${lang}/account`, label: dict.account.nav },
+  ];
   return (
-    <header className="mx-auto max-w-5xl px-5 py-5">
-      <div className="flex items-center justify-between gap-4">
-        <Link href={`/${lang}`} className="text-xl font-extrabold tracking-tight">{dict.brand}</Link>
-        <div className="flex items-center gap-5">
-          <Link href={`/${lang}#track`} className="hidden text-sm font-semibold underline-offset-4 hover:underline sm:inline">{dict.nav.track}</Link>
-          <Link href={`/${lang}/account`} className="text-sm font-semibold underline-offset-4 hover:underline">{dict.account.nav}</Link>
+    <header className="relative border-b border-rule bg-paper">
+      <div className="bar flex items-center justify-between gap-2 py-3">
+        <Link href={`/${lang}`} className="flex min-h-11 items-center gap-2 sm:gap-2.5" aria-label={dict.brand}>
+          <BrandMark />
+          <span className="font-display text-[1.2rem] leading-none font-extrabold whitespace-nowrap max-[360px]:text-[1.02rem] sm:text-[1.35rem]">{dict.brand}</span>
+        </Link>
+        <nav aria-label={dict.nav.menu} className="hidden items-center gap-0.5 lg:flex">
+          {LINKS.map((key) => <Link key={key} href={`/${lang}/${key}`} className="navlink">{dict.nav[key]}</Link>)}
+        </nav>
+        <div className="flex items-center gap-1 sm:gap-1.5">
+          <Link href={`/${lang}#track`} className="navlink hidden lg:inline-flex">{dict.nav.track}</Link>
+          <Link href={`/${lang}/account`} className="navlink hidden lg:inline-flex">{dict.account.nav}</Link>
           <CartBadge lang={lang} label={dict.cart.nav} />
-          <LocaleSwitch current={lang} label={dict.nav.language} />
+          <span className="hidden lg:inline-flex"><LocaleSwitch current={lang} label={dict.nav.language} /></span>
+          <MobileMenu lang={lang} items={items} label={dict.nav.menu} close={dict.nav.close} languageLabel={dict.nav.language} />
         </div>
       </div>
-      <nav aria-label={dict.nav.menu} className="mt-4 flex flex-wrap gap-x-6 gap-y-2 border-t border-rule pt-3">
-        {LINKS.map((key) => (
-          <Link key={key} href={`/${lang}/${key}`} className="text-sm font-semibold underline-offset-4 hover:underline">{dict.nav[key]}</Link>
-        ))}
-        <Link href={`/${lang}#track`} className="text-sm font-semibold underline-offset-4 hover:underline sm:hidden">{dict.nav.track}</Link>
-      </nav>
     </header>
   );
 }

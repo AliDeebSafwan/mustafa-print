@@ -35,16 +35,16 @@ export function ProofActions({ code, t }: { code: string; t: Dictionary["proof"]
       {mode === "choose" ? (
         <>
           <p className="text-sm text-muted">{t.approveNote}</p>
-          <button type="button" className="bg-ink px-5 py-3 font-bold text-paper disabled:opacity-50" disabled={busy} onClick={() => void send("approved")}>{t.approve}</button>
-          <button type="button" className="border border-ink px-5 py-3 font-semibold" onClick={() => setMode("changes")}>{t.requestChanges}</button>
+          <button type="button" className="btn btn-order" disabled={busy} onClick={() => void send("approved")}>{t.approve}</button>
+          <button type="button" className="btn btn-outline" onClick={() => setMode("changes")}>{t.requestChanges}</button>
         </>
       ) : (
         <div className="flex flex-col gap-2 border border-rule p-3">
           <label className="text-sm font-semibold" htmlFor="proof-comment">{t.whatToChange}</label>
-          <textarea id="proof-comment" className="border border-ink px-3 py-2" rows={3} value={comment} onChange={(e) => setComment(e.target.value)} maxLength={2000} />
+          <textarea id="proof-comment" className="input" rows={3} value={comment} onChange={(e) => setComment(e.target.value)} maxLength={2000} />
           <div className="flex gap-2">
-            <button type="button" className="bg-ink px-4 py-2 font-bold text-paper disabled:opacity-50" disabled={busy} onClick={() => void send("changes_requested")}>{t.sendChanges}</button>
-            <button type="button" className="border border-ink px-4 py-2 font-semibold" onClick={() => { setMode("choose"); setError(null) }}>{t.back}</button>
+            <button type="button" className="btn btn-order btn-sm" disabled={busy} onClick={() => void send("changes_requested")}>{t.sendChanges}</button>
+            <button type="button" className="btn btn-outline btn-sm" onClick={() => { setMode("choose"); setError(null) }}>{t.back}</button>
           </div>
         </div>
       )}

@@ -1,7 +1,7 @@
 /**
  * Generates documentation FROM THE LIVE SCHEMA so it can never drift from the migrations:
- *   docs/erd.mermaid          Mermaid ER diagram (keys + a few business columns)
- *   docs/DATA-DICTIONARY.md   every table, column, type, default, constraint
+ *   docs/database/erd.mermaid          Mermaid ER diagram (keys + a few business columns)
+ *   docs/database/DATA-DICTIONARY.md   every table, column, type, default, constraint
  * Usage: DATABASE_URL=... pnpm db:erd
  */
 import { config as loadDotenv } from 'dotenv';
@@ -10,7 +10,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import pg from 'pg';
 
-const outDir = path.resolve(import.meta.dirname, '../../../docs');
+const outDir = path.resolve(import.meta.dirname, '../../../docs/database');
 const url = process.env.DATABASE_URL;
 if (!url) throw new Error('DATABASE_URL is not set');
 
@@ -126,4 +126,4 @@ for (const t of tables) {
   md.push('');
 }
 await writeFile(path.join(outDir, 'DATA-DICTIONARY.md'), md.join('\n'));
-console.log(`wrote ${tables.length} tables → docs/erd.mermaid, docs/DATA-DICTIONARY.md`);
+console.log(`wrote ${tables.length} tables → docs/database/erd.mermaid, docs/database/DATA-DICTIONARY.md`);

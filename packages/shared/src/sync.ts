@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 /**
- * Offline sync contract (client <-> API). See docs/DB-DESIGN.md "Offline-first design".
+ * Offline sync contract (client <-> API). See docs/database/DB-DESIGN.md "Offline-first design".
  *
  *  push:  POST /api/v1/sync/push   { deviceId, mutations[] }  -> per-mutation results (idempotent by mutation id)
  *  pull:  GET  /api/v1/sync/pull?cursor=<opaque>&limit=200    -> changed rows since cursor

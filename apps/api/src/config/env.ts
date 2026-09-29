@@ -49,6 +49,11 @@ const schema = z
     PUBLIC_BRANCH_CODE: z.string().min(1).default('MAIN'),
     /** Where uploaded pictures are kept on the server. Back this directory up with the database. */
     MEDIA_DIR: z.string().min(1).default('./storage/media'),
+    /** A running ClamAV daemon (clamd). Set the host to scan every customer design and proof; leave it empty to skip
+     *  scanning. With a host set, an upload the scanner cannot check is refused, never accepted unchecked. */
+    CLAMAV_HOST: z.string().optional(),   // blank (an empty line in .env) means off, like every other optional setting
+    CLAMAV_PORT: z.coerce.number().int().min(1).max(65535).default(3310),
+    CLAMAV_TIMEOUT_MS: z.coerce.number().int().min(1000).max(300000).default(60000),
     /** The website's revalidation endpoint, called after content changes so edits appear at once (optional). */
     WEB_REVALIDATE_URL: z.string().url().optional(),
     WEB_REVALIDATE_SECRET: z.string().min(24).optional(),

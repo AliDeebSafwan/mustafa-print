@@ -54,10 +54,10 @@ export function SignedOut({ lang, t, onSignedIn }: { lang: Locale; t: T; onSigne
   }
 
   if (sent) return <Notice kind="ok">{t.checkEmail}</Notice>;
-  const tab = (active: boolean) => `py-2.5 text-center font-semibold ${active ? "bg-ink text-paper" : ""}`;
+  const tab = (active: boolean) => `font-display min-h-11 rounded-full text-center font-extrabold transition-colors ${active ? "bg-ink text-paper" : "hover:bg-white"}`;
   return (
     <div className="max-w-md">
-      <div className="grid grid-cols-2 border border-ink" role="tablist">
+      <div className="grid grid-cols-2 gap-1 rounded-full bg-stock p-1" role="tablist">
         <button type="button" role="tab" aria-selected={mode === "in"} className={tab(mode === "in")} onClick={() => { setMode("in"); setError(null); }}>{t.signIn}</button>
         <button type="button" role="tab" aria-selected={mode === "up"} className={tab(mode === "up")} onClick={() => { setMode("up"); setError(null); }}>{t.signUp}</button>
       </div>
@@ -119,7 +119,7 @@ function SignedIn({ lang, t, me, statusLabels, onSignedOut }: { lang: Locale; t:
     <div>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p><span className="font-bold">{me.fullName}</span> <span className="text-muted" dir="ltr">{me.email}</span></p>
-        <button type="button" className="border border-ink px-3 py-2 text-sm font-semibold" onClick={() => void signOut()}>{t.signOut}</button>
+        <button type="button" className="btn btn-outline btn-sm" onClick={() => void signOut()}>{t.signOut}</button>
       </div>
       {!me.verified && (
         <div className="mt-4 flex flex-col gap-2">
@@ -139,10 +139,10 @@ function SignedIn({ lang, t, me, statusLabels, onSignedOut }: { lang: Locale; t:
                 <p className="text-sm text-muted">{statusLabels[o.status] ?? o.status} · <span dir="ltr">{Number(o.total).toFixed(2)} {o.currency}</span></p>
               </div>
               <div className="flex shrink-0 gap-2">
-                <button type="button" className="border border-ink px-3 py-2 text-sm font-semibold disabled:opacity-50" disabled={reordering !== null} onClick={() => void reorder(o.code)}>
+                <button type="button" className="btn btn-outline btn-sm" disabled={reordering !== null} onClick={() => void reorder(o.code)}>
                   {reordering === o.code ? t.working : t.reorder}
                 </button>
-                <Link href={`/${lang}/track/${o.code}`} className="border border-ink px-3 py-2 text-sm font-semibold">{t.track}</Link>
+                <Link href={`/${lang}/track/${o.code}`} className="btn btn-outline btn-sm">{t.track}</Link>
               </div>
             </li>
           ))}

@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
-/* Cairo (SIL Open Font License, public/fonts/LICENSE), self-hosted with font-display: optional: the page never jumps
+/* Two families, both SIL Open Font License, both self-hosted: Cairo for reading, Kufam (below) for headlines and buttons.
+   Cairo (SIL Open Font License, public/fonts/LICENSE), self-hosted with font-display: optional: the page never jumps
    when the font arrives late (it simply keeps the fallback for that first view). Preloaded per language in the layout. */
 @font-face { font-family: 'Cairo Variable'; font-style: normal; font-display: optional; font-weight: 200 1000;
   src: url(/fonts/cairo-arabic-wght-normal.woff2) format('woff2-variations'); unicode-range: U+0600-06FF,U+0750-077F,U+0870-088E,U+0890-0891,U+0897-08E1,U+08E3-08FF,U+200C-200E,U+2010-2011,U+204F,U+2E41,U+FB50-FDFF,U+FE70-FE74,U+FE76-FEFC,U+102E0-102FB,U+10E60-10E7E,U+10EC2-10EC4,U+10EFC-10EFF,U+1EE00-1EE03,U+1EE05-1EE1F,U+1EE21-1EE22,U+1EE24,U+1EE27,U+1EE29-1EE32,U+1EE34-1EE37,U+1EE39,U+1EE3B,U+1EE42,U+1EE47,U+1EE49,U+1EE4B,U+1EE4D-1EE4F,U+1EE51-1EE52,U+1EE54,U+1EE57,U+1EE59,U+1EE5B,U+1EE5D,U+1EE5F,U+1EE61-1EE62,U+1EE64,U+1EE67-1EE6A,U+1EE6C-1EE72,U+1EE74-1EE77,U+1EE79-1EE7C,U+1EE7E,U+1EE80-1EE89,U+1EE8B-1EE9B,U+1EEA1-1EEA3,U+1EEA5-1EEA9,U+1EEAB-1EEBB,U+1EEF0-1EEF1; }
@@ -9,40 +10,124 @@
 @font-face { font-family: 'Cairo Variable'; font-style: normal; font-display: optional; font-weight: 200 1000;
   src: url(/fonts/cairo-latin-wght-normal.woff2) format('woff2-variations'); unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD; }
 
-/* Press-sheet palette: paper, key (black) ink, and the three process colours used sparingly. */
+/* Kufam: a wide, confident Kufic that gives headlines and buttons a voice of their own. Frozen from the variable font at
+   the one weight the design uses (800) with fontTools' instancer, which takes it from 89 KB to 58 KB; any bold or black
+   request resolves to it. Only the subset the page's language needs is preloaded. (docs/design/README.md) */
+@font-face { font-family: 'Kufam Variable'; font-style: normal; font-display: optional; font-weight: 800;
+  src: url(/fonts/kufam-arabic-800.woff2) format('woff2'); unicode-range: U+0600-06FF,U+0750-077F,U+0870-088E,U+0890-0891,U+0897-08E1,U+08E3-08FF,U+200C-200E,U+2010-2011,U+204F,U+2E41,U+FB50-FDFF,U+FE70-FE74,U+FE76-FEFC; }
+@font-face { font-family: 'Kufam Variable'; font-style: normal; font-display: optional; font-weight: 800;
+  src: url(/fonts/kufam-latin-800.woff2) format('woff2'); unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD; }
+
+/* The shop's own inks. Paper is white, "ink" is a deep blue-black (what a rich black looks like on press), and the three
+   process colours are used as whole fields rather than sprinkled: cyan, magenta and yellow are the brand. */
 :root {
   --paper: #ffffff;
-  --ink: #101418;
-  --muted: #5b6470;
-  --rule: #d9dde3;
-  --tint: #f4f6f8;
+  --stock: #eef2f6;
+  --ink: #0e1726;
+  --ink-2: #1b2a45;
+  --muted: #55606e;
+  --rule: #dde3ea;
+  --tint: var(--stock);
   --magenta: #e5006d;
+  --magenta-deep: #c4005d;
   --cyan: #00a3e0;
   --yellow: #ffd500;
+  --whatsapp: #128a4e;
   color-scheme: light;
 }
 
 @theme inline {
   --color-paper: var(--paper);
+  --color-stock: var(--stock);
   --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
   --color-muted: var(--muted);
   --color-rule: var(--rule);
   --color-tint: var(--tint);
   --color-magenta: var(--magenta);
   --color-cyan: var(--cyan);
   --color-yellow: var(--yellow);
-  /* Cairo covers Arabic + Latin in one family; it is self-hosted through @fontsource (works offline, no Google request). */
+  --color-whatsapp: var(--whatsapp);
   --font-sans: "Cairo Variable", "Segoe UI", Tahoma, system-ui, sans-serif;
+  --font-display: "Kufam Variable", "Cairo Variable", "Segoe UI", Tahoma, system-ui, sans-serif;
 }
 
-html { background: var(--paper); }
-body { color: var(--ink); font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
+html { background: var(--paper); scroll-behavior: smooth; }
+body { color: var(--ink); font-family: var(--font-sans); line-height: 1.75; -webkit-font-smoothing: antialiased; }
+@layer base { h1, h2, h3, .font-display { font-family: var(--font-display); letter-spacing: 0; } }
 
-:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+:focus-visible { outline: 3px solid var(--magenta); outline-offset: 3px; border-radius: 4px; }
+.on-dark :focus-visible { outline-color: #fff; }
 
 @media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
   *, ::before, ::after { animation: none !important; transition: none !important; }
 }
 
 /* A "go to" arrow written as ←: forward in Arabic, mirrored to point forward in English. */
 [dir="ltr"] .arrow-go { display: inline-block; transform: scaleX(-1); }
+
+/* Component classes live in the components layer, BELOW Tailwind's utilities: a utility such as `hidden` or `lg:inline-flex`
+   must always be able to override them (unlayered CSS would silently win). */
+@layer components {
+/* ---- page frame ------------------------------------------------------------------------------------------------
+   Every page sits in the middle column. A section that should run edge to edge (a colour field) takes .full and pads
+   itself back in line with that column, so text stays aligned while the colour bleeds to the screen edge. */
+.page { display: grid; grid-template-columns: [full-start] minmax(1.25rem, 1fr) [content-start] minmax(0, 68rem) [content-end] minmax(1.25rem, 1fr) [full-end]; }
+.page > * { grid-column: content; }
+.page > .full { grid-column: full; padding-inline: max(1.25rem, calc((100% - 68rem) / 2)); }
+.bar { max-width: 68rem; margin-inline: auto; padding-inline: 1.25rem; }
+
+/* ---- type scale (Arabic wants generous leading; no letter-spacing anywhere) ---------------------------------------- */
+.t-hero { font-size: clamp(2.35rem, 7.2vw, 4.4rem); line-height: 1.32; font-weight: 800; }
+.t-section { font-size: clamp(1.75rem, 4.2vw, 2.6rem); line-height: 1.35; font-weight: 800; }
+.t-page { font-size: clamp(2rem, 5vw, 3rem); line-height: 1.3; font-weight: 800; }
+.t-lead { font-size: clamp(1.05rem, 2.2vw, 1.25rem); line-height: 1.9; color: var(--muted); }
+
+/* ---- buttons: pill-shaped, headline face. Magenta means "this places or confirms an order"; ink is for everything else. */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 3.1rem; padding: .55rem 1.6rem; border: 2px solid transparent; border-radius: 999px;
+  font-family: var(--font-display); font-weight: 800; font-size: 1rem; line-height: 1.2; text-align: center; cursor: pointer;
+  transition: background-color .15s, color .15s, border-color .15s, transform .15s; }
+.btn:active { transform: translateY(1px); }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.btn-ink { background: var(--ink); color: #fff; }
+.btn-ink:hover { background: var(--ink-2); }
+.btn-order { background: var(--magenta); color: #fff; }
+.btn-order:hover { background: var(--magenta-deep); }
+.btn-outline { border-color: var(--ink); color: var(--ink); background: transparent; }
+.btn-outline:hover { background: var(--ink); color: #fff; }
+.on-dark .btn-outline { border-color: #fff; color: #fff; }
+.on-dark .btn-outline:hover { background: #fff; color: var(--ink); }
+.btn-sm { min-height: 2.5rem; padding: .35rem 1.1rem; font-size: .9rem; }
+
+/* ---- form controls --------------------------------------------------------------------------------------------- */
+.input { width: 100%; min-height: 3rem; padding: .6rem .9rem; border: 1.5px solid #b8c1cc; border-radius: 10px; background: #fff; font-size: 1rem; line-height: 1.5; }
+.input:hover { border-color: var(--ink); }
+.input:focus { border-color: var(--ink); outline: 3px solid color-mix(in srgb, var(--magenta) 35%, transparent); outline-offset: 0; }
+
+/* ---- swatch chips: a picture over a name plate, edged with one of the four process inks, like a colour chip ---------- */
+.chip { display: flex; flex-direction: column; overflow: hidden; border-radius: 14px; background: #fff; box-shadow: 0 0 0 1px var(--rule); --ink-edge: var(--cyan); }
+.chip:nth-child(4n + 2) { --ink-edge: var(--magenta); }
+.chip:nth-child(4n + 3) { --ink-edge: var(--yellow); }
+.chip:nth-child(4n) { --ink-edge: var(--ink); }
+.chip-art { position: relative; overflow: hidden; background: var(--stock); border-block-end: 5px solid var(--ink-edge); }
+.chip-art img { width: 100%; height: 100%; object-fit: cover; transition: transform .35s ease; }
+a.chip:hover .chip-art img, button.chip:hover .chip-art img { transform: scale(1.04); }
+.chip-label { padding: .85rem 1rem 1.05rem; }
+
+/* ---- the hero's print moment: three ink layers land in register, once, on load ---------------------------------- */
+.ink-layer { position: absolute; inset: 0; width: 100%; height: 100%; mix-blend-mode: multiply; pointer-events: none; }
+.ink-c { animation: register-c 1.2s cubic-bezier(.2, .8, .2, 1) both; }
+.ink-m { animation: register-m 1.2s cubic-bezier(.2, .8, .2, 1) .12s both; }
+.ink-y { animation: register-y 1.2s cubic-bezier(.2, .8, .2, 1) .24s both; }
+/* A faint 45-degree halftone screen, the texture of a printed tint. */
+.halftone-field { background-image: radial-gradient(circle at center, rgba(14, 23, 38, .07) 1.2px, transparent 1.6px); background-size: 12px 12px; }
+
+/* ---- navigation links ------------------------------------------------------------------------------------------ */
+.navlink { display: inline-flex; align-items: center; min-height: 2.75rem; padding: .25rem .8rem; border-radius: 999px; font-weight: 700; font-size: .95rem; transition: background-color .15s; }
+.navlink:hover { background: var(--stock); }
+}
+
+@keyframes register-c { from { transform: translate(-6%, -4%); } to { transform: none; } }
+@keyframes register-m { from { transform: translate(6%, -5%); } to { transform: none; } }
+@keyframes register-y { from { transform: translate(0, 7%); } to { transform: none; } }

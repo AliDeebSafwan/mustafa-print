@@ -4,6 +4,7 @@ import { createLogger } from './logger';
 import { createAuthService } from './modules/auth/auth.service';
 import { createCustomerAuthService } from './modules/customer-auth/customer-auth.service';
 import { localDiskStorage } from './modules/media/storage';
+import { disabledScanner } from './modules/media/virus-scan';
 import { createWebOrderService } from './modules/orders/web-orders.service';
 import { authConfigFromEnv } from './modules/auth/config';
 import { startOutboxWorker } from './modules/messaging/outbox-worker';
@@ -18,7 +19,7 @@ const worker = startOutboxWorker({ pool, providers, log, intervalMs: env.WORKER_
 // Housekeeping: drop long-expired sessions and stale login-throttle rows.
 const auth = createAuthService({ pool, cfg: authConfigFromEnv(env) });
 const customerAccounts = createCustomerAuthService({ pool, mailer: providers.get('email')!, siteUrl: env.PUBLIC_WEB_URL, branchCode: env.PUBLIC_BRANCH_CODE });
-const webOrders = createWebOrderService({ pool, storage: localDiskStorage(env.MEDIA_DIR), publicWebUrl: env.PUBLIC_WEB_URL });
+const webOrders = createWebOrderService({ pool, storage: localDiskStorage(env.MEDIA_DIR), scanner: disabledScanner /* the worker never receives uploads */, publicWebUrl: env.PUBLIC_WEB_URL });
 const prune = () => Promise.all([auth.pruneExpired(), customerAccounts.pruneExpired(), webOrders.pruneUnattached()])
   .then(([removed]) => log.info(removed, 'auth housekeeping'))
   .catch((err) => log.error({ err }, 'auth housekeeping failed'));

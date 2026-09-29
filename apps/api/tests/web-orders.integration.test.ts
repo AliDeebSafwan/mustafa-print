@@ -155,7 +155,7 @@ describe.skipIf(!hasTestDatabase)('ordering from the website', () => {
       await s.pool.query(`UPDATE order_files SET created_at = clock_timestamp() - interval '2 days' WHERE id = $1`, [file.id]);
       const { createWebOrderService } = await import('../src/modules/orders/web-orders.service');
       const { localDiskStorage } = await import('../src/modules/media/storage');
-      const removed = await createWebOrderService({ pool: s.pool, storage: localDiskStorage(s.mediaDir), publicWebUrl: SITE }).pruneUnattached();
+      const removed = await createWebOrderService({ pool: s.pool, storage: localDiskStorage(s.mediaDir), scanner: (await import('../src/modules/media/virus-scan')).disabledScanner, publicWebUrl: SITE }).pruneUnattached();
       expect(removed).toBe(1);
       await expect(readFile(`${s.mediaDir}/${row.storage_key}`)).rejects.toMatchObject({ code: 'ENOENT' });
     });

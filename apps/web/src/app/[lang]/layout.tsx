@@ -8,7 +8,8 @@ import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { getDictionary } from "@/lib/dictionaries";
 import { siteUrl } from "@/lib/seo";
-import { getSite } from "@/lib/site";
+import { getSite, whatsappLink } from "@/lib/site";
+import { WhatsAppFab } from "@/components/whatsapp-fab";
 
 export function generateStaticParams() {
   return LOCALES.map((lang) => ({ lang }));
@@ -34,18 +35,20 @@ export default async function LangLayout({ children, params }: LayoutProps<"/[la
   return (
     <html lang={lang} dir={dirFor(lang)}>
       <head>
-        {/* The font this page's language needs first, fetched with the HTML so it usually arrives within the short
+        {/* The fonts this page's language needs first, fetched with the HTML so they usually arrive within the short
             window font-display: optional allows. Arabic pages also show Latin digits and emails. */}
         {(lang === "ar" ? ["arabic", "latin"] : ["latin"]).map((subset) => (
           <link key={subset} rel="preload" href={`/fonts/cairo-${subset}-wght-normal.woff2`} as="font" type="font/woff2" crossOrigin="anonymous" />
         ))}
+        <link rel="preload" href={`/fonts/kufam-${lang === "ar" ? "arabic" : "latin"}-800.woff2`} as="font" type="font/woff2" crossOrigin="anonymous" />
       </head>
       <body className="min-h-dvh bg-paper text-ink">
         <CartProvider>
           <ColorBar />
           <SiteHeader lang={lang} dict={dict} />
-          <main className="mx-auto max-w-5xl px-5">{children}</main>
+          <main className="page">{children}</main>
           <SiteFooter site={site} dict={dict} lang={lang} />
+          {site?.whatsapp && <WhatsAppFab href={whatsappLink(site.whatsapp)} label={dict.hero.whatsapp} />}
         </CartProvider>
       </body>
     </html>

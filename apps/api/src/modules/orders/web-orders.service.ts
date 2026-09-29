@@ -8,13 +8,14 @@ import { HttpError } from '../../http-error';
 import type { AuthContext } from '../auth/types';
 import type { CustomerAccountRow } from '../customer-auth/customer-auth.service';
 import type { MediaStorage } from '../media/storage';
+import { assertFileIsClean, type FileScanner } from '../media/virus-scan';
 import { enqueueOrderNotification } from '../messaging/enqueue';
 import type { PushService } from '../push/push.service';
 import { detectDesignKind } from './design-files';
 
 type Row = Record<string, unknown>;
 
-export interface WebOrderDeps { pool: Pool; storage: MediaStorage; publicWebUrl: string; onPublicChange?: () => void; push?: PushService }
+export interface WebOrderDeps { pool: Pool; storage: MediaStorage; scanner: FileScanner; publicWebUrl: string; onPublicChange?: () => void; push?: PushService }
 
 /** A customer must have proven their email before ordering: the shop needs a way to reach them about it. */
 function assertMayOrder(account: CustomerAccountRow): asserts account is CustomerAccountRow & { customer_id: string } {
@@ -23,7 +24,7 @@ function assertMayOrder(account: CustomerAccountRow): asserts account is Custome
 
 export type WebOrderService = ReturnType<typeof createWebOrderService>;
 
-export function createWebOrderService({ pool, storage, publicWebUrl, push }: WebOrderDeps) {
+export function createWebOrderService({ pool, storage, scanner, publicWebUrl, push }: WebOrderDeps) {
   // ---- design files -----------------------------------------------------------------------------------------------
   /** Keeps an uploaded design, if it really is one of the accepted kinds. The temporary upload is always removed. */
   async function uploadDesign(account: CustomerAccountRow, upload: { path: string; originalName: string; bytes: number }): Promise<Row> {
@@ -31,6 +32,7 @@ export function createWebOrderService({ pool, storage, publicWebUrl, push }: Web
       assertMayOrder(account);
       const kind = await detectDesignKind(upload.path);
       if (!kind) throw new HttpError(400, 'invalid_request', 'unsupported_file');
+      await assertFileIsClean(scanner, upload.path);
       const id = randomUUID();
       const key = `designs/${id}.${kind}`;
       await storage.putFile(key, upload.path);

@@ -17,12 +17,12 @@ function errorText(t: Dictionary["checkout"], err: unknown): string {
   const code = err instanceof AccountError ? err.code : "server";
   const detail = err instanceof AccountError ? (err.detail ?? "") : "";
   if (detail.startsWith("below_minimum")) return t.error.below_minimum;
-  if (detail === "product_unavailable" || detail === "file_unavailable") return t.error[detail];
+  if (detail === "product_unavailable" || detail === "file_unavailable" || detail === "infected_file" || detail === "scanner_unavailable") return t.error[detail];
   return t.error[code as keyof typeof t.error] ?? t.error.server;
 }
 
 /** Requires a verified account, then submits the cart as one order. */
-export function CheckoutForm({ lang, t, accountT, apiBase }: { lang: Locale; t: Dictionary["checkout"]; accountT: Dictionary["account"]; apiBase: string }) {
+export function CheckoutForm({ lang, t, accountT, totalLabel, currency, apiBase }: { lang: Locale; t: Dictionary["checkout"]; accountT: Dictionary["account"]; totalLabel: string; currency: string; apiBase: string }) {
   const router = useRouter();
   const cart = useCart();
   const [me, setMe] = useState<CustomerMe | null | undefined>(undefined);
@@ -102,7 +102,7 @@ export function CheckoutForm({ lang, t, accountT, apiBase }: { lang: Locale; t: 
     <div className="mt-8 grid gap-10 lg:grid-cols-[1fr_320px]">
       <div className="flex flex-col gap-6">
         <div>
-          <h2 className="font-bold">{t.fulfillment}</h2>
+          <h2 className="font-display text-lg font-extrabold">{t.fulfillment}</h2>
           <div className="mt-2 flex gap-4">
             {(["pickup", "delivery"] as const).map((f) => (
               <label key={f} className="flex items-center gap-2 text-sm font-semibold">
@@ -123,14 +123,14 @@ export function CheckoutForm({ lang, t, accountT, apiBase }: { lang: Locale; t: 
         </div>
 
         <div>
-          <h2 className="font-bold">{t.attachFile}</h2>
+          <h2 className="font-display text-lg font-extrabold">{t.attachFile}</h2>
           <ul className="mt-2 flex flex-col gap-3">
             {rows.map(({ line, product }) => (
-              <li key={product.id} className="flex items-center gap-3 border border-rule p-2.5">
+              <li key={product.id} className="flex items-center gap-3 rounded-xl border border-rule p-2.5">
                 {product.image?.srcset[0] && (
                   // eslint-disable-next-line @next/next/no-img-element -- client component: the server-only Picture helper cannot be imported here
                   <img src={`${apiBase}${product.image.srcset[0].src}`} alt={product.image.alt} width={product.image.width} height={product.image.height}
-                    className="size-12 shrink-0 object-cover" />
+                    className="size-12 shrink-0 rounded-lg object-cover" />
                 )}
                 <span className="min-w-0 flex-1 truncate font-semibold">{product.name}</span>
                 {line.files[0] ? (
@@ -139,7 +139,7 @@ export function CheckoutForm({ lang, t, accountT, apiBase }: { lang: Locale; t: 
                     <button type="button" className="text-magenta underline" onClick={() => cart.setFiles(product.id, [])}>{t.removeFile}</button>
                   </span>
                 ) : (
-                  <label className="shrink-0 cursor-pointer border border-ink px-2.5 py-1.5 text-xs font-semibold">
+                  <label className="btn btn-outline btn-sm shrink-0">
                     {uploading === product.id ? t.uploading : t.attachFile}
                     <input type="file" className="hidden" disabled={uploading === product.id}
                       onChange={(e) => { const file = e.target.files?.[0]; if (file) void attachFile(product.id, file); }} />
@@ -153,15 +153,15 @@ export function CheckoutForm({ lang, t, accountT, apiBase }: { lang: Locale; t: 
         <Field id="order-notes" label={t.orderNotes} value={orderNotes} onChange={(e) => setOrderNotes(e.target.value)} />
       </div>
 
-      <div className="h-fit border border-ink p-4">
+      <div className="h-fit rounded-2xl bg-stock p-5">
         <ul className="flex flex-col gap-2 text-sm">
           {rows.map(({ line, product }) => (
-            <li key={product.id} className="flex justify-between gap-3"><span className="min-w-0 truncate">{product.name} × {line.quantity}</span><span dir="ltr">{lineTotal(product, line.quantity).toFixed(2)}</span></li>
+            <li key={product.id} className="flex justify-between gap-3"><span className="min-w-0 truncate">{product.name} × {line.quantity}</span><span dir="ltr">{lineTotal(product, line.quantity).toFixed(2)} {currency}</span></li>
           ))}
         </ul>
-        <div className="mt-3 flex justify-between border-t border-rule pt-3 font-bold"><span>{accountT.orders}</span><span dir="ltr">{subtotal.toFixed(2)}</span></div>
+        <div className="mt-3 flex items-baseline justify-between border-t border-rule pt-3 font-bold"><span>{totalLabel}</span><span className="font-display text-2xl font-extrabold" dir="ltr">{subtotal.toFixed(2)} <span className="text-base">{currency}</span></span></div>
         {error && <div className="mt-3"><Notice kind="error">{error}</Notice></div>}
-        <button type="button" className={`${primaryBtn} mt-4 w-full`} disabled={busy} onClick={() => void submit()}>{busy ? t.placing : t.place}</button>
+        <button type="button" className="btn btn-order mt-4 w-full" disabled={busy} onClick={() => void submit()}>{busy ? t.placing : t.place}</button>
       </div>
     </div>
   );

@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { useParams } from "next/navigation";
 import { useState } from "react";
 import { unitPriceFor } from "@mpe/shared/client";
 import type { PublicProduct } from "@mpe/shared";
@@ -14,7 +16,9 @@ import type { Dictionary } from "@/lib/dictionaries";
  */
 export function AddToCart({ product, currency, t }: { product: PublicProduct; currency: string; t: Dictionary["cart"] }) {
   const cart = useCart();
-  const min = product.minQuantity;
+  const lang = String(useParams<{ lang: string }>()?.lang ?? "ar");
+  // the API sends quantities with three decimals ("100.000"); people read and type "100"
+  const min = String(Number(product.minQuantity));
   const [quantity, setQuantityState] = useState(min);
   const [added, setAdded] = useState(false);
 
@@ -34,18 +38,25 @@ export function AddToCart({ product, currency, t }: { product: PublicProduct; cu
   }
 
   return (
-    <div className="mt-3 border-t border-rule pt-3">
-      <label className="flex items-center gap-2 text-sm font-semibold">
-        {t.quantity}
-        <input type="text" inputMode="decimal" className="w-24 border border-ink px-2 py-1.5 text-center" dir="ltr"
-          value={quantity} onChange={(e) => setQuantity(e.target.value)} aria-describedby={`min-${product.id}`} />
-      </label>
-      <p id={`min-${product.id}`} className="mt-1 text-xs text-muted">{t.minimum.replace("{{n}}", min)}</p>
-      {belowMin && <p role="alert" className="mt-1 text-xs font-semibold text-magenta">{t.belowMinimum.replace("{{n}}", min)}</p>}
-      <p className="mt-2 text-sm font-bold" dir="auto">{lineTotal} {currency}</p>
-      <button type="button" className="mt-2 w-full bg-ink px-4 py-2.5 text-sm font-bold text-paper disabled:opacity-50" disabled={belowMin || !quantity.trim()} onClick={add}>
+    <div className="mt-4 rounded-xl bg-stock p-3.5">
+      <div className="flex items-end justify-between gap-3">
+        <label className="flex flex-col gap-1 text-xs font-semibold text-muted">
+          {t.quantity}
+          <input type="text" inputMode="decimal" className="input !min-h-11 !w-28 text-center !text-base font-bold text-ink" dir="ltr"
+            value={quantity} onChange={(e) => setQuantity(e.target.value)} aria-describedby={`min-${product.id}`} />
+        </label>
+        <p className="text-end" aria-live="polite">
+          <span className="block text-xs font-semibold text-muted">{t.subtotal}</span>
+          <span className="font-display text-2xl leading-tight font-extrabold" dir="ltr">{lineTotal} <span className="text-base">{currency}</span></span>
+        </p>
+      </div>
+      <p id={`min-${product.id}`} className={`mt-1.5 text-xs ${belowMin ? "font-semibold text-magenta" : "text-muted"}`} role={belowMin ? "alert" : undefined}>
+        {(belowMin ? t.belowMinimum : t.minimum).replace("{{n}}", min)}
+      </p>
+      <button type="button" className="btn btn-order mt-3 w-full" disabled={belowMin || !quantity.trim()} onClick={add}>
         {added ? t.added : t.addToCart}
       </button>
+      {added && <Link href={`/${lang}/cart`} className="mt-2 block text-center text-sm font-bold underline underline-offset-4">{t.viewCart}</Link>}
     </div>
   );
 }

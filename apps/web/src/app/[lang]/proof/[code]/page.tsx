@@ -5,6 +5,7 @@ import { PUBLIC_CODE_RE, isLocale } from "@mpe/shared";
 import { ProofActions } from "@/components/proof/proof-actions";
 import { fetchProof } from "@/lib/api";
 import { getDictionary } from "@/lib/dictionaries";
+import { dateLocale } from "@/lib/format";
 
 export const metadata: Metadata = { robots: { index: false, follow: false } };   // proof links are private
 
@@ -17,7 +18,7 @@ export default async function ProofPage({ params }: PageProps<"/[lang]/proof/[co
   if (!proof) return <section className="pt-6"><h1 className="text-3xl font-extrabold">{t.notFound}</h1></section>;
 
   const fileUrl = `/api/v1/public/proofs/${upper}/file`;
-  const when = new Intl.DateTimeFormat(lang === "ar" ? "ar-LB" : "en-GB", { dateStyle: "medium", timeStyle: "short" });
+  const when = new Intl.DateTimeFormat(dateLocale(lang), { dateStyle: "medium", timeStyle: "short" });
   const answer = proof.responses.at(-1);
 
   return (

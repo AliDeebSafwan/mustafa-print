@@ -8,7 +8,7 @@ import { pullChanges } from '../modules/sync/pull';
 import { processPush } from '../modules/sync/push';
 
 /**
- * Offline sync. Contract: packages/shared/src/sync.ts and mutations.ts; design: docs/DB-DESIGN.md.
+ * Offline sync. Contract: packages/shared/src/sync.ts and mutations.ts; design: docs/database/DB-DESIGN.md.
  * The caller's branch always comes from the authenticated user, never from the request.
  */
 export function syncRouter(deps: { pool: Pool; env: Env; authenticate: RequestHandler; onPublicChange?: () => void }): Router {

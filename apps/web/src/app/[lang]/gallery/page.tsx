@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { PageHeader } from "@/components/page-header";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { isLocale, SLUG_RE } from "@mpe/shared";
@@ -21,14 +22,14 @@ export default async function GalleryPage({ params, searchParams }: PageProps<"/
   const wanted = (await searchParams).service;
   const service = typeof wanted === "string" && SLUG_RE.test(wanted) ? wanted : undefined;
   const [dict, items, services] = await Promise.all([getDictionary(lang), getGallery(lang, service), getServices(lang)]);
-  const chip = (active: boolean) => `px-3 py-1.5 text-sm font-semibold ${active ? "bg-ink text-paper" : "border border-ink"}`;
+  const chip = (active: boolean) => `btn btn-sm shrink-0 whitespace-nowrap ${active ? "btn-ink" : "btn-outline"}`;
 
   return (
-    <section className="pt-6">
-      <h1 className="text-4xl font-extrabold">{dict.gallery.title}</h1>
-      <p className="mt-3 text-lg text-muted">{dict.gallery.intro}</p>
+    <>
+      <PageHeader title={dict.gallery.title} intro={dict.gallery.intro} />
+      <section className="mt-10">
       {services.length > 0 && (
-        <nav className="mt-6 flex flex-wrap gap-2" aria-label={dict.nav.services}>
+        <nav className="-mx-5 flex gap-2 overflow-x-auto px-5 pb-2 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0" aria-label={dict.nav.services}>
           <Link href={`/${lang}/gallery`} className={chip(!service)} aria-current={!service ? "page" : undefined}>{dict.gallery.all}</Link>
           {services.map((s) => (
             <Link key={s.slug} href={`/${lang}/gallery?service=${s.slug}`} className={chip(service === s.slug)} aria-current={service === s.slug ? "page" : undefined}>{s.title}</Link>
@@ -36,8 +37,9 @@ export default async function GalleryPage({ params, searchParams }: PageProps<"/
         </nav>
       )}
       <div className="mt-8">
-        {items.length === 0 ? <p className="text-muted">{dict.gallery.empty}</p> : <GalleryGrid items={items} labels={dict.gallery} apiBase={publicApiUrl()} />}
+        {items.length === 0 ? <p className="text-muted">{dict.gallery.empty}</p> : <GalleryGrid items={items} labels={dict.gallery} apiBase={publicApiUrl()} eager />}
       </div>
     </section>
+    </>
   );
 }

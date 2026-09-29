@@ -42,9 +42,9 @@ export function TrackForm({ lang, labels, initial = "" }: Props) {
           placeholder={labels.placeholder}
           aria-describedby="track-hint track-error"
           aria-invalid={invalid}
-          className="h-12 flex-1 border border-ink bg-paper px-4 font-mono text-lg tracking-widest uppercase placeholder:text-muted/60 placeholder:normal-case placeholder:tracking-normal"
+          className="input flex-1 !text-lg font-mono tracking-widest uppercase placeholder:text-muted/60 placeholder:normal-case placeholder:tracking-normal"
         />
-        <button type="submit" className="h-12 bg-magenta px-8 text-lg font-bold text-white hover:bg-ink">
+        <button type="submit" className="btn btn-order sm:min-w-36">
           {labels.submit}
         </button>
       </div>

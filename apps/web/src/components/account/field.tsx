@@ -1,7 +1,7 @@
 import type { InputHTMLAttributes } from "react";
 
-export const inputCls = "w-full border border-ink bg-paper px-3 py-2.5 text-base";
-export const primaryBtn = "bg-ink px-5 py-3 font-bold text-paper disabled:opacity-50";
+export const inputCls = "input";
+export const primaryBtn = "btn btn-ink";
 
 /** A labelled input; help text is linked for screen readers instead of being stuffed into the label. */
 export function Field({ label, help, id, ...input }: { label: string; help?: string; id: string } & InputHTMLAttributes<HTMLInputElement>) {

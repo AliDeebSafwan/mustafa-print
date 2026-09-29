@@ -5,6 +5,7 @@ import { PUBLIC_CODE_RE, isLocale } from "@mpe/shared";
 import { QuoteActions } from "@/components/quote/quote-actions";
 import { fetchQuote } from "@/lib/api";
 import { getDictionary } from "@/lib/dictionaries";
+import { dateLocale, formatMoney } from "@/lib/format";
 
 export const metadata: Metadata = { robots: { index: false, follow: false } };   // quote links are private
 
@@ -19,8 +20,8 @@ export default async function QuotePage({ params }: PageProps<"/[lang]/quote/[co
     return <section className="pt-6"><h1 className="text-3xl font-extrabold">{t.notFound}</h1></section>;
   }
 
-  const money = new Intl.NumberFormat(lang === "ar" ? "ar-LB" : "en-US", { style: "currency", currency: quote.currency });
-  const date = new Intl.DateTimeFormat(lang === "ar" ? "ar-LB" : "en-GB", { dateStyle: "long" });
+  const money = { format: (v: number) => formatMoney(v, quote.currency, lang) };
+  const date = new Intl.DateTimeFormat(dateLocale(lang), { dateStyle: "long" });
   const shop = lang === "ar" ? quote.shopNameAr : quote.shopNameEn;
 
   return (
