@@ -24,8 +24,11 @@ mustafa-print-erp/
 │   │   └── src/pages/        one folder per area: orders, customers, companies, catalogue, reports, site, team
 │   └── api/           API and background worker; database migrations in api/db/
 │       ├── src/modules/      the work itself, one folder per area (orders, payments, messaging, …)
-│       └── src/routes/       thin HTTP layer, one file per mount point; `admin-*` and `public*` sort together
-├── packages/shared/   rules all three share: statuses, permissions, money, sync
+│       └── src/routes/       thin HTTP layer: admin/ · public/ · and, at its root, the routes that serve both
+│                             (quotes, proofs) plus auth, sync, health and the WhatsApp webhook
+├── packages/shared/   rules all three share
+│   └── src/           rules/ (statuses, money, permissions) · contracts/ (sync payloads, API shapes) · util/
+│                      index.ts and client.ts stay at the root: they are what the apps import
 ├── e2e/               end-to-end tests (the staff app's code against the real API)
 ├── deploy/            production server: Docker, Caddy, backups, restore
 ├── docs/              plans, guides, reports (index: docs/README.md)
@@ -35,6 +38,10 @@ mustafa-print-erp/
 The files at the top level stay there because the tools look for them exactly there: `package.json`, `pnpm-workspace.yaml` and
 `pnpm-lock.yaml` (the package manager), `docker-compose.yml` (the local database), `.env.example` (copy it to `.env`), `.nvmrc`
 (the Node version), `.gitignore` and `.dockerignore`.
+
+A folder is split only when unrelated things sit in it. `apps/admin/src/content` (one `*-api.ts` per server area),
+`apps/admin/src/offline` (the sync engine) and `apps/web/src/lib` each do one job under a consistent naming
+convention, so they stay flat — subdividing them would add depth without making anything easier to find.
 
 ## Quick start
 

@@ -3,8 +3,8 @@
  * in every validation schema (and zod's messages in every language), ~100 KB a phone downloads for nothing.
  * Types are still imported from '@mpe/shared' with `import type`, which costs nothing at runtime.
  */
-export { unitPriceFor } from './money';
-export { normalizePhone } from './phone';
-export { PUBLIC_CODE_RE } from './ids';
-export { LOCALES } from './locales';
-export { PASSWORD_MIN } from './limits';
+export { unitPriceFor } from './rules/money';
+export { normalizePhone } from './util/phone';
+export { PUBLIC_CODE_RE } from './util/ids';
+export { LOCALES } from './util/locales';
+export { PASSWORD_MIN } from './util/limits';
