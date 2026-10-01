@@ -11,6 +11,10 @@ if (env.NODE_ENV === 'production' && env.EMAIL_PROVIDER !== 'resend') {
   // provider would print their one-time links into the logs, where anyone reading logs could use them.
   log.warn('EMAIL_PROVIDER is not "resend": customer sign-up emails are NOT delivered and their links appear in the logs. Configure email before opening accounts to customers.');
 }
+if (env.NODE_ENV !== 'production' && env.EMAIL_PROVIDER === 'console') {
+  // The most common "the email never came" during development: it was printed here instead.
+  log.info('EMAIL_PROVIDER=console: emails are printed in this log (look for "console provider"), not sent. Order emails are printed by the worker (pnpm dev:worker).');
+}
 
 const server = createApp({ pool, env, log }).app.listen(env.PORT, () => log.info({ port: env.PORT }, 'api listening'));
 

@@ -1,5 +1,6 @@
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import type { Pool } from 'pg';
+import type { Logger } from 'pino';
 import type { CustomerMe, CustomerOrderSummary, CustomerSignupInput, ReorderItem, customerSignupInput } from '@mpe/shared';
 import type { z } from 'zod';
 import { withTransaction, type Queryable } from '../../db/pool';
@@ -29,6 +30,8 @@ export interface CustomerAuthDeps {
   /** The website's public address; links in emails point there. */
   siteUrl: string;
   branchCode: string;
+  /** Where a refused email is reported. The person is never told (see the rules above), so this is the only trace. */
+  log?: Pick<Logger, 'error'>;
 }
 
 interface AccountRow {
@@ -57,7 +60,7 @@ const EMAILS = {
 
 export type CustomerAuthService = ReturnType<typeof createCustomerAuthService>;
 
-export function createCustomerAuthService({ pool, mailer, siteUrl, branchCode }: CustomerAuthDeps) {
+export function createCustomerAuthService({ pool, mailer, siteUrl, branchCode, log }: CustomerAuthDeps) {
   const base = siteUrl.replace(/\/$/, '');
 
   let branchId: string | null = null;
@@ -70,8 +73,12 @@ export function createCustomerAuthService({ pool, mailer, siteUrl, branchCode }:
 
   async function send(account: Pick<AccountRow, 'email' | 'full_name' | 'locale'>, kind: keyof typeof EMAILS, link: string): Promise<void> {
     const text = EMAILS[kind][account.locale];
-    // A failure is logged by the caller's error path only if it throws; the account itself is already saved.
-    await mailer.send({ logId: randomUUID(), channel: 'email', to: account.email, locale: account.locale, subject: text.subject, body: text.body(account.full_name, link) });
+    // Providers report a refusal (bad API key, unverified sender domain, rate limit) as a result rather than an error,
+    // so it must be checked here, or the email silently never arrives. The person still gets the usual answer: telling
+    // them would reveal whether the address has an account. They can ask for a new link once email is fixed.
+    // The body is not logged: it holds a one-time sign-in link.
+    const result = await mailer.send({ logId: randomUUID(), channel: 'email', to: account.email, locale: account.locale, subject: text.subject, body: text.body(account.full_name, link) });
+    if (!result.ok) log?.error({ kind, provider: result.provider, code: result.code, reason: result.message }, 'customer account email was not sent');
   }
 
   /** A cap on emails per account per hour, so the form cannot be used to flood someone's inbox. */

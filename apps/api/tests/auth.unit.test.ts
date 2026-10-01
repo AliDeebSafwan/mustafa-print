@@ -19,8 +19,14 @@ describe('login identifiers', () => {
     expect(normalizeIdentifier('0096170123456')).toBe('+96170123456');
     expect(normalizeIdentifier('(+961) 70-123-456')).toBe('+96170123456');
   });
+  it('finds a phone typed the local way, exactly as the staff screens save it (with the shop\'s country code)', () => {
+    expect(normalizeIdentifier('71 222 333')).toBe('+96171222333');
+    expect(normalizeIdentifier('03123456')).toBe('+9613123456');
+    expect(normalizeIdentifier('٧١٢٢٢٣٣٣')).toBe('+96171222333');            // Arabic-Indic digits from an Arabic keyboard
+    expect(normalizeIdentifier('6 12 34 56 78', '33')).toBe('+33612345678');   // another country, through the setting
+  });
   it('rejects anything else', () => {
-    for (const bad of ['', 'abc', '12345', 'not an@email', '+0123456789', "x'; DROP TABLE users;--"]) expect(normalizeIdentifier(bad)).toBeNull();
+    for (const bad of ['', 'abc', 'not an@email', '+0123456789', "x'; DROP TABLE users;--"]) expect(normalizeIdentifier(bad)).toBeNull();
   });
 });
 

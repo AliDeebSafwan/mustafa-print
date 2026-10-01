@@ -19,6 +19,8 @@ export interface AuthConfig {
   lockMinutes: number;
   /** A just-rotated refresh token may be presented again for this long (two tabs racing) without being treated as theft. */
   refreshGraceSeconds: number;
+  /** Country code for a phone typed without one at sign-in (Lebanon = 961); the same setting as the staff app's. */
+  defaultCallingCode: string;
 }
 
 declare global {

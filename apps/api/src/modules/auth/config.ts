@@ -9,4 +9,5 @@ export const authConfigFromEnv = (env: Env): AuthConfig => ({
   maxFailedLogins: 5,
   lockMinutes: 15,
   refreshGraceSeconds: 10,
+  defaultCallingCode: env.DEFAULT_CALLING_CODE,
 });

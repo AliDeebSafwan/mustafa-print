@@ -679,7 +679,9 @@
     "error": {
       "lastAdmin": "This is the shop's last admin. Add another admin first.",
       "emailInUse": "This email is already in use.",
-      "phoneInUse": "This number is already in use."
+      "phoneInUse": "This number is already in use.",
+      "phoneInvalid": "This phone number is not valid. Type it as you would dial it, for example 70 123 456 or +961 70 123 456.",
+      "emailInvalid": "This email address is not valid."
     },
     "audit": {
       "created": "Added a new member with the {{role}} role",

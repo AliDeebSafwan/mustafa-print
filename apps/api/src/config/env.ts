@@ -65,6 +65,9 @@ const schema = z
 
     /** The branch whose services, showroom and products the public website shows. */
     PUBLIC_BRANCH_CODE: z.string().min(1).default('MAIN'),
+    /** Country code added to a phone typed without one (Lebanon = 961). Keep it equal to the staff app's
+     *  VITE_DEFAULT_CALLING_CODE: a number must be normalised the same way when it is saved and when someone signs in. */
+    DEFAULT_CALLING_CODE: z.string().regex(/^[1-9][0-9]{0,3}$/, 'digits only, without + (e.g. 961)').default('961'),
     /** Where uploaded pictures are kept on the server. Back this directory up with the database. */
     MEDIA_DIR: z.string().min(1).default('./storage/media'),
     /** A running ClamAV daemon (clamd). Set the host to scan every customer design and proof; leave it empty to skip

@@ -1,14 +1,15 @@
-const E164 = /^\+[1-9][0-9]{6,14}$/;
+import { normalizePhone } from '@mpe/shared';
+
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /**
- * Canonical form of what the user typed: lower-cased email, or an E.164 phone number ("00961 70 123 456" -> "+96170123456").
- * Returns null when it is neither (the login then fails like any other wrong credential).
+ * Canonical form of what the user typed: lower-cased email, or an E.164 phone number. A phone goes through the same
+ * normalizePhone the staff screens use when they SAVE a number, so whatever form a person types at sign-in
+ * ("71 222 333", "03 123456", "+961 71 222 333", "00961...", Arabic-Indic digits) finds the account stored as
+ * "+96171222333". Returns null when it is neither (the login then fails like any other wrong credential).
  */
-export function normalizeIdentifier(raw: string): string | null {
+export function normalizeIdentifier(raw: string, defaultCallingCode = '961'): string | null {
   const value = raw.trim();
   if (value.includes('@')) return EMAIL.test(value) ? value.toLowerCase() : null;
-  const digits = value.replace(/[\s().-]/g, '');
-  const phone = digits.startsWith('00') ? `+${digits.slice(2)}` : digits;
-  return E164.test(phone) ? phone : null;
+  return normalizePhone(value, defaultCallingCode);
 }

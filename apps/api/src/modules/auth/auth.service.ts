@@ -79,7 +79,7 @@ export function createAuthService({ pool, cfg }: { pool: Pool; cfg: AuthConfig }
     q.query('UPDATE refresh_tokens SET revoked_at = coalesce(revoked_at, clock_timestamp()) WHERE family_id = $1', [familyId]);
 
   async function login(input: LoginRequest, meta: { userAgent?: string } = {}): Promise<IssuedSession> {
-    const identifier = normalizeIdentifier(input.identifier);
+    const identifier = normalizeIdentifier(input.identifier, cfg.defaultCallingCode);
     const throttleKey = identifier ?? input.identifier.trim().toLowerCase().slice(0, 254);
     await assertNotLocked(throttleKey);
 

@@ -76,7 +76,7 @@ export function createApp(deps: { pool: Pool; env: Env; log: Logger; mailer?: Ch
   const content = createContentService({ pool, storage, onPublicChange: refreshWebsite });
   const customers = createCustomerAuthService({
     pool, siteUrl: env.PUBLIC_WEB_URL, branchCode: env.PUBLIC_BRANCH_CODE,
-    mailer: deps.mailer ?? buildProviders(env, log).get('email')!,
+    mailer: deps.mailer ?? buildProviders(env, log).get('email')!, log,
   });
   const push = createPushService({ pool, publicKey: env.VAPID_PUBLIC_KEY, privateKey: env.VAPID_PRIVATE_KEY, subject: env.VAPID_SUBJECT, agent: deps.pushAgent, extraAllowedHosts: deps.pushAllowedHosts });
   app.use('/api/v1/admin/push', pushRouter({ push, authenticate: requireLogin }));
