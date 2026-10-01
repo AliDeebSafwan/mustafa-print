@@ -804,7 +804,8 @@
     "disabled": "disabled",
     "error": {
       "targetHasAccount": "That customer is already tied to another website account.",
-      "notVerified": "An account cannot be merged before its email is confirmed."
+      "notVerified": "An account cannot be merged before its email is confirmed.",
+      "alreadyVerified": "This account is already confirmed."
     },
     "confirmMerge": "Merge this account into \"{{name}}\"? All its orders move there and the duplicate record is removed. This cannot be undone.",
     "merged": "Merged into \"{{name}}\".",
@@ -821,7 +822,12 @@
     "mergeTitle": "Merge with a counter customer",
     "mergeHelp": "If this is someone you already registered at the counter, merge them so their whole history is in one record. This is never done automatically: a phone typed on the website proves nothing.",
     "suggested": "Possible matches (same phone or name):",
-    "findCustomer": "Or search for a customer by name or phone"
+    "findCustomer": "Or search for a customer by name or phone",
+    "approveTitle": "Approve without the email link",
+    "approveHelp": "For someone you know, or whose confirmation email did not arrive. They can order at once, as if they had opened the link, and the link keeps working. It gets its own customer record: if they are already a counter customer, merge them afterwards.",
+    "approve": "Approve account",
+    "confirmApprove": "Approve {{email}} without email confirmation? Do this only if you are sure the address belongs to this person.",
+    "approvedNow": "Account approved. The customer can order now."
   },
   "quotes": {
     "title": "Quotes",

@@ -52,6 +52,51 @@ describe.skipIf(!hasTestDatabase)('the owner manages website accounts', () => {
     expect(await jsonOf<Json[]>(await otherAdmin.get(`${A}?q=nadine`))).toEqual([]);   // another branch never sees it
   });
 
+  describe('approving an account whose email is not confirmed', () => {
+    const signupOnly = async (email: string) => {
+      const b = browser();
+      await b.post('/signup', { email, password: 'a good long password', full_name: 'Rami Approved', locale: 'ar' });
+      const { rows: [row] } = await s.pool.query<{ id: string }>('SELECT id FROM customer_accounts WHERE email = $1', [email]);
+      return { b, id: row!.id };
+    };
+
+    it('lets the person order as if they had opened the link, and is in the audit log', async () => {
+      const { b, id } = await signupOnly('approved@example.com');
+      await b.post('/login', { email: 'approved@example.com', password: 'a good long password' });
+      expect(await jsonOf(await b.get('/me'))).toMatchObject({ verified: false });
+
+      const approved = await jsonOf<Json>(await post(admin, `/${id}/approve`));
+      expect(approved.email_verified_at).toBeTruthy();
+      expect(approved.customer_id).toBeTruthy();
+      expect(await jsonOf(await b.get('/me'))).toMatchObject({ verified: true });
+
+      const log = await jsonOf<Json[]>(await admin.get('/api/v1/admin/team/audit-log'));
+      expect(log.find((e) => e.action === 'customer_account.approved' && e.target_id === id)).toMatchObject({ details: { customer_id: approved.customer_id } });
+
+      // The confirmation link still works afterwards and changes nothing.
+      expect((await b.post('/verify', { token: new URL(s.linkFor('approved@example.com')).searchParams.get('token') })).status).toBe(200);
+      const { rows: [after] } = await s.pool.query<{ customer_id: string }>('SELECT customer_id FROM customer_accounts WHERE id = $1', [id]);
+      expect(after!.customer_id).toBe(approved.customer_id);
+    });
+
+    it('never ties the account to a counter customer with the same email: approval does not prove who owns it', async () => {
+      const counter = await createCustomer(staff, { email: 'known-at-counter@example.com' });
+      const { id } = await signupOnly('known-at-counter@example.com');
+      const approved = await jsonOf<Json>(await post(admin, `/${id}/approve`));
+      expect(approved.customer_id).not.toBe(counter);
+      // The owner can still merge them on purpose.
+      expect((await post(admin, `/${id}/merge`, { customer_id: counter })).status).toBe(200);
+    });
+
+    it('is for the owner of that branch only, and only once', async () => {
+      const { id } = await signupOnly('approve-guard@example.com');
+      expect((await post(staff, `/${id}/approve`)).status).toBe(403);
+      expect((await post(otherAdmin, `/${id}/approve`)).status).toBe(404);
+      expect((await post(admin, `/${id}/approve`)).status).toBe(200);
+      expect(await jsonOf(await post(admin, `/${id}/approve`))).toMatchObject({ message: 'already_verified' });
+    });
+  });
+
   describe('disabling an abusive account', () => {
     it('signs it out at once, refuses sign-in, and can be undone — all in the audit log', async () => {
       const { b, id } = await webAccount('abusive@example.com');

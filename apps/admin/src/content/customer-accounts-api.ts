@@ -34,5 +34,6 @@ export const customerAccountsApi = {
   detail: (id: string) => call<AccountDetail>('GET', `/${id}`),
   deactivate: (id: string) => call<unknown>('POST', `/${id}/deactivate`, {}),
   reactivate: (id: string) => call<unknown>('POST', `/${id}/reactivate`, {}),
+  approve: (id: string) => call<unknown>('POST', `/${id}/approve`, {}),
   merge: (id: string, customerId: string) => call<{ orders_moved: number }>('POST', `/${id}/merge`, { customer_id: customerId }),
 }

@@ -72,6 +72,6 @@ export const AUDIT_ACTIONS = [
   'user.created', 'user.updated', 'user.role_changed', 'user.permissions_changed',
   'user.deactivated', 'user.reactivated', 'user.password_reset', 'user.sessions_ended',
   'branch_settings.updated', 'my_password.changed', 'order.deposit_overridden', 'order.items_edited_after_lock',
-  'customer_account.deactivated', 'customer_account.reactivated', 'customer_account.merged',
+  'customer_account.deactivated', 'customer_account.reactivated', 'customer_account.merged', 'customer_account.approved',
 ] as const;
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];

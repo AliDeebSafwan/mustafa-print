@@ -60,6 +60,24 @@ const EMAILS = {
 
 export type CustomerAuthService = ReturnType<typeof createCustomerAuthService>;
 
+/**
+ * A new shop customer record for a website account, from what the person typed at sign-up.
+ * The phone typed at sign-up is NOT verified, so it never links this account to a counter customer (that would hand
+ * their order history to anyone who types their number). If another customer already has that phone, the new record
+ * is created without it; the owner can merge the two from the staff app.
+ */
+export async function createCustomerForAccount(
+  q: Queryable, account: Pick<AccountRow, 'branch_id' | 'full_name' | 'email' | 'phone_e164' | 'locale'>,
+): Promise<string> {
+  const { rows } = await q.query<{ id: string }>(
+    `INSERT INTO customers (branch_id, full_name, email, phone_e164, locale, email_opt_in, preferred_channel, consent_source, consent_recorded_at)
+     VALUES ($1, $2, $3,
+             CASE WHEN EXISTS (SELECT 1 FROM customers WHERE branch_id = $1 AND phone_e164 = $4 AND deleted_at IS NULL) THEN NULL ELSE $4 END,
+             $5, true, 'email', 'checkout', clock_timestamp()) RETURNING id`,
+    [account.branch_id, account.full_name, account.email, account.phone_e164, account.locale]);
+  return rows[0]!.id;
+}
+
 export function createCustomerAuthService({ pool, mailer, siteUrl, branchCode, log }: CustomerAuthDeps) {
   const base = siteUrl.replace(/\/$/, '');
 
@@ -171,15 +189,7 @@ export function createCustomerAuthService({ pool, mailer, siteUrl, branchCode, l
             WHERE c.branch_id = $1 AND lower(c.email) = $2 AND c.deleted_at IS NULL
               AND NOT EXISTS (SELECT 1 FROM customer_accounts a WHERE a.customer_id = c.id AND a.deleted_at IS NULL)
             ORDER BY c.updated_at DESC LIMIT 1`, [account.branch_id, account.email]);
-        customerId = known.rows[0]?.id ?? (await client.query<{ id: string }>(
-          // The phone typed at sign-up is NOT verified, so it never links this account to a counter customer (that
-          // would hand their order history to anyone who types their number). If another customer already has that
-          // phone, the new record is created without it; the owner can merge the two from the staff app.
-          `INSERT INTO customers (branch_id, full_name, email, phone_e164, locale, email_opt_in, preferred_channel, consent_source, consent_recorded_at)
-           VALUES ($1, $2, $3,
-                   CASE WHEN EXISTS (SELECT 1 FROM customers WHERE branch_id = $1 AND phone_e164 = $4 AND deleted_at IS NULL) THEN NULL ELSE $4 END,
-                   $5, true, 'email', 'checkout', clock_timestamp()) RETURNING id`,
-          [account.branch_id, account.full_name, account.email, account.phone_e164, account.locale])).rows[0]!.id;
+        customerId = known.rows[0]?.id ?? await createCustomerForAccount(client, account);
       }
       await client.query('UPDATE customer_accounts SET email_verified_at = coalesce(email_verified_at, clock_timestamp()), customer_id = $2 WHERE id = $1', [account.id, customerId]);
       return createSession(client, account.id, userAgent);

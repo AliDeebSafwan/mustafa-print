@@ -3,6 +3,7 @@ import { withTransaction } from '../../db/pool';
 import { HttpError } from '../../http-error';
 import { logAudit } from '../audit/audit';
 import type { AuthContext } from '../auth/types';
+import { createCustomerForAccount } from './customer-auth.service';
 
 type Row = Record<string, unknown>;
 
@@ -69,6 +70,32 @@ export function createCustomerAccountsAdminService({ pool }: { pool: Pool }) {
   }
 
   /**
+   * The owner vouches for an account whose email is not confirmed yet (the person is known to the shop, or the email
+   * never arrived): it may order from now on, exactly as if the link had been opened. The confirmation link keeps working.
+   *
+   * Unlike a confirmed email, the owner's approval does not prove who owns the address, so the account always gets a
+   * new customer record and is never tied automatically to a counter customer with the same email: that would show
+   * their order history to whoever typed their address. If it is the same person, the owner merges the two below.
+   */
+  async function approve(auth: AuthContext, id: string): Promise<Row> {
+    return withTransaction(pool, async (client) => {
+      const { rows } = await client.query<{ id: string; branch_id: string; full_name: string; email: string; phone_e164: string | null;
+                                             locale: 'ar' | 'en'; customer_id: string | null; email_verified_at: Date | null }>(
+        'SELECT * FROM customer_accounts WHERE id = $1 AND branch_id = $2 AND deleted_at IS NULL FOR UPDATE', [id, auth.branchId]);
+      const account = rows[0];
+      if (!account) throw new HttpError(404, 'not_found');
+      if (account.email_verified_at) throw new HttpError(409, 'invalid_request', 'already_verified');
+
+      const customerId = account.customer_id ?? await createCustomerForAccount(client, account);
+      const updated = await client.query<Row>(
+        `UPDATE customer_accounts SET email_verified_at = clock_timestamp(), customer_id = $2 WHERE id = $1
+         RETURNING id, email_verified_at, customer_id, row_version`, [id, customerId]);
+      await logAudit(client, auth, 'customer_account.approved', { type: 'customer_account', id }, { customer_id: customerId });
+      return updated.rows[0]!;
+    });
+  }
+
+  /**
    * The person who signed up on the website is the same person already registered at the counter: point the account at
    * the counter record, move everything that belonged to the duplicate over to it, and retire the duplicate. Their
    * whole history ends up in one place, on the counter record staff already know.
@@ -110,5 +137,5 @@ export function createCustomerAccountsAdminService({ pool }: { pool: Pool }) {
     });
   }
 
-  return { list, detail, setActive, merge };
+  return { list, detail, setActive, approve, merge };
 }
