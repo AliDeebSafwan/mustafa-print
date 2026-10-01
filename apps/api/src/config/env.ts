@@ -1,8 +1,26 @@
 import { config as loadDotenv } from 'dotenv';
 loadDotenv({ quiet: true });
 import { z } from 'zod';
+// The first zod user on the server, so the no-code-generation rule starts here (see packages/shared/src/util/zod-setup.ts).
+z.config({ jitless: true });
 
 const csv = (s: string) => s.split(',').map((x) => x.trim()).filter(Boolean);
+
+/**
+ * JWT secrets that have been published in this repository's example files. They are public knowledge, so anyone could
+ * sign their own admin token with them: a production server must never start with one.
+ */
+const PUBLISHED_EXAMPLE_SECRETS = new Set(['1q2w3e4r5t6y7u8i9o0p1a2s3d4f5g6h7j8k9l0zxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM']);
+
+/** A real public address: https, and not this machine. Dev defaults (http://localhost) must never reach production. */
+function isPublicHttpsUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' && !['localhost', '127.0.0.1', '[::1]', '0.0.0.0'].includes(url.hostname);
+  } catch {
+    return false;
+  }
+}
 
 const schema = z
   .object({
@@ -69,6 +87,26 @@ const schema = z
     need(v.EMAIL_PROVIDER === 'resend', ['RESEND_API_KEY', 'EMAIL_FROM']);
     need(Boolean(v.WEB_REVALIDATE_URL), ['WEB_REVALIDATE_SECRET']);
     need(Boolean(v.VAPID_PUBLIC_KEY || v.VAPID_PRIVATE_KEY), ['VAPID_PUBLIC_KEY', 'VAPID_PRIVATE_KEY', 'VAPID_SUBJECT']);
+
+    // A wildcard with credentialed requests is never valid CORS, and would read as "any site" to whoever edits this.
+    if (v.CORS_ORIGINS.includes('*')) ctx.addIssue({ code: 'custom', path: ['CORS_ORIGINS'], message: 'list the allowed origins; "*" is not allowed' });
+
+    if (v.NODE_ENV !== 'production') return;
+    if (PUBLISHED_EXAMPLE_SECRETS.has(v.JWT_ACCESS_SECRET)) {
+      ctx.addIssue({ code: 'custom', path: ['JWT_ACCESS_SECRET'], message: 'is the published example value; generate your own with: openssl rand -base64 48' });
+    }
+    // A real deployment serves over https. The development defaults point at http://localhost, so without this check a
+    // server whose .env forgot these settings would start "fine" and send customers tracking links to localhost. Local
+    // production-mode testing over plain http stays possible by saying so explicitly: COOKIE_SECURE=false.
+    const insecureOptOut = v.COOKIE_SECURE === 'false';
+    if (insecureOptOut) return;
+    if (!isPublicHttpsUrl(v.PUBLIC_WEB_URL)) {
+      ctx.addIssue({ code: 'custom', path: ['PUBLIC_WEB_URL'], message: 'must be the website\'s public https address in production (e.g. https://example.com)' });
+    }
+    const badOrigins = v.CORS_ORIGINS.filter((origin) => !isPublicHttpsUrl(origin));
+    if (badOrigins.length) {
+      ctx.addIssue({ code: 'custom', path: ['CORS_ORIGINS'], message: `must list public https origins in production; not: ${badOrigins.join(', ')}` });
+    }
   })
   .transform((v) => ({ ...v, COOKIE_SECURE: v.COOKIE_SECURE ? v.COOKIE_SECURE === 'true' : v.NODE_ENV === 'production' }));
 

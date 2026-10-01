@@ -107,7 +107,9 @@ describe('environment', () => {
     expect(() => parseEnv({ ...base, JWT_ACCESS_SECRET: 'short' })).toThrow(/at least 32/);
   });
   it('turns secure cookies on in production unless overridden', () => {
-    expect(parseEnv({ ...base, NODE_ENV: 'production' }).COOKIE_SECURE).toBe(true);
+    // production also needs real https addresses (see env-production.unit.test.ts); the point here is the cookie flag
+    const live = { PUBLIC_WEB_URL: 'https://shop.example', CORS_ORIGINS: 'https://app.shop.example' };
+    expect(parseEnv({ ...base, ...live, NODE_ENV: 'production' }).COOKIE_SECURE).toBe(true);
     expect(parseEnv({ ...base, NODE_ENV: 'development' }).COOKIE_SECURE).toBe(false);
     expect(parseEnv({ ...base, NODE_ENV: 'production', COOKIE_SECURE: 'false' }).COOKIE_SECURE).toBe(false);
   });

@@ -5,8 +5,8 @@ import { useSyncExternalStore } from 'react'
  * dark command-center theme. It is a per-device preference (a shared shop tablet and the owner's phone may want
  * different ones), so it lives in localStorage rather than on the account.
  *
- * index.html applies the stored value before the first paint, so the page never flashes the wrong background.
- * Keep the key in step with the inline script there.
+ * public/theme-boot.js applies the stored value before the first paint, so the page never flashes the wrong background.
+ * Keep the key in step with it.
  */
 export const THEMES = ['classic', '2100'] as const
 export type Theme = (typeof THEMES)[number]

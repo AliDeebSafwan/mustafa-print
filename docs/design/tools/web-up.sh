@@ -2,7 +2,7 @@
 # Builds the website against the demo API and serves it on :3380 (restarting it if already running).
 set -e
 R=$(cd "$(dirname "$0")/../../.." && pwd)
-ps aux | grep -E "[n]ext start -p 3380|[n]ext-server" | awk '{print $2}' | xargs -r kill 2>/dev/null || true
+lsof -ti tcp:3380 | xargs -r kill 2>/dev/null || true   # by port, never by matching command lines
 cd $R/apps/web && rm -rf .next
 export API_INTERNAL_URL=http://127.0.0.1:4280 PUBLIC_API_URL=http://localhost:3380 SITE_URL=http://localhost:3380
 timeout 250 pnpm build > /tmp/design-web-build.log 2>&1 || { tail -30 /tmp/design-web-build.log; exit 1; }
