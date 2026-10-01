@@ -22,6 +22,12 @@ function describe(t: (key: string, opts?: Record<string, unknown>) => string, en
     case 'user.updated': return t('team.audit.updated')
     case 'branch_settings.updated': return t('team.audit.branchSettings')
     case 'my_password.changed': return t('team.audit.myPassword')
+    case 'customer_account.approved': return t('team.audit.accountApproved')
+    case 'customer_account.deactivated': return t('team.audit.accountDisabled')
+    case 'customer_account.reactivated': return t('team.audit.accountEnabled')
+    case 'customer_account.merged': return t('team.audit.accountMerged', { n: Number(details.orders_moved ?? 0) })
+    case 'order.deposit_overridden': return t('team.audit.depositOverridden')
+    case 'order.items_edited_after_lock': return t('team.audit.itemsEditedAfterLock')
     default: return entry.action
   }
 }

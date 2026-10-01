@@ -5,7 +5,6 @@ import { hasTestDatabase } from './helpers/test-db';
 import { createCustomer, createOrder } from './helpers/sync-client';
 import { jsonOf, startTestServer, type ApiClient, type TestServer } from './helpers/test-server';
 
-type Json = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 const SITE = 'https://print.example.com';
 const PDF = Buffer.from('%PDF-1.7\n1 0 obj << /Type /Catalog >> endobj\ntrailer << >>\n%%EOF\n');
 const png = (seed: string) => Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.from(seed.padEnd(64, '.'))]);

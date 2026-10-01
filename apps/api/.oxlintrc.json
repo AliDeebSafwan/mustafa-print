@@ -1,0 +1,11 @@
+{
+  "$schema": "../admin/node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "oxc", "node", "promise"],
+  "env": { "node": true, "es2024": true },
+  "rules": {
+    "no-floating-promises": "error",
+    "typescript/no-floating-promises": "error",
+    "promise/no-return-wrap": "error"
+  },
+  "ignorePatterns": ["dist", "drizzle", "src/db/schema.ts", "src/db/relations.ts"]
+}

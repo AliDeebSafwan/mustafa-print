@@ -696,7 +696,13 @@
       "myPassword": "غيّر كلمة سره الخاصة",
       "empty": "لا يوجد سجل بعد.",
       "system": "النظام",
-      "loadMore": "عرض المزيد"
+      "loadMore": "عرض المزيد",
+      "accountApproved": "وافق على حساب في الموقع دون تأكيد البريد",
+      "accountDisabled": "عطّل حساباً في الموقع",
+      "accountEnabled": "أعاد تفعيل حساب في الموقع",
+      "accountMerged": "دمج حساب الموقع مع زبون عند الكاونتر (نُقل {{n}} طلب)",
+      "depositOverridden": "تجاوز العربون المطلوب",
+      "itemsEditedAfterLock": "عدّل بنود الطلب بعد إقفاله"
     },
     "invoice": {
       "title": "الفاتورة والضريبة",

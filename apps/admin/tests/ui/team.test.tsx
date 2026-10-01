@@ -3,6 +3,7 @@ import 'fake-indexeddb/auto'
 import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { AUDIT_ACTIONS } from '@mpe/shared'
 
 const session = vi.hoisted(() => ({ role: 'admin', id: '018f0000-0000-7000-8000-00000000c001', maxDiscountPercent: null as number | null }))
 const server = vi.hoisted(() => ({
@@ -182,6 +183,17 @@ describe('the audit log screen', () => {
     expect(screen.getByText('Password reset')).toBeTruthy()
     expect(screen.getByText('Shop settings changed')).toBeTruthy()
     expect(screen.queryByText('user.created')).toBeNull()
+  })
+
+  it('describes every action the server can log, so none of them reaches the owner as a raw key', async () => {
+    server.audit = AUDIT_ACTIONS.map((action, i) => ({
+      id: `a${i}`, action, target_type: 'x', target_id: 'y',
+      details: { role: 'staff', from: 'staff', to: 'admin', granted: [], orders_moved: 2 },
+      created_at: '2026-01-02T10:00:00Z', actor_name: 'Owner',
+    }))
+    openAudit()
+    await screen.findByText('Password reset')
+    for (const action of AUDIT_ACTIONS) expect(screen.queryByText(action)).toBeNull()
   })
 
   it('shows an empty state instead of nothing', async () => {

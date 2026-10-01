@@ -696,7 +696,13 @@
       "myPassword": "Changed their own password",
       "empty": "No entries yet.",
       "system": "System",
-      "loadMore": "Load more"
+      "loadMore": "Load more",
+      "accountApproved": "Approved a website account without email confirmation",
+      "accountDisabled": "Disabled a website account",
+      "accountEnabled": "Re-enabled a website account",
+      "accountMerged": "Merged a website account into a counter customer ({{n}} order(s) moved)",
+      "depositOverridden": "Overrode the required deposit",
+      "itemsEditedAfterLock": "Edited the items after the order was locked"
     },
     "invoice": {
       "title": "Invoice and tax",

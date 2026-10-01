@@ -1,6 +1,6 @@
 import { Router, type RequestHandler, type Response } from 'express';
 import { z } from 'zod';
-import { HttpError, parseWith } from '../../http-error';
+import { parseWith } from '../../http-error';
 import { requirePermission } from '../../modules/auth/middleware';
 import { toCsv, type ReportsService } from '../../modules/reports/reports.service';
 

@@ -222,7 +222,7 @@ describe.skipIf(!hasTestDatabase)('customer accounts on the website', () => {
 
     it('never returns another customer\'s order, and answers a made-up or malformed code the same way', async () => {
       const productId = await product();
-      const mineId = await createCustomer(reception, { full_name: 'Owner', email: 'owner-reorder@example.com' } as never);
+      await createCustomer(reception, { full_name: 'Owner', email: 'owner-reorder@example.com' } as never);
       const theirsId = await createCustomer(reception, { full_name: 'Other', email: 'other-reorder@example.com' } as never);
       const theirs = await createOrder(reception, theirsId, { items: [{ id: newId(), product_id: productId, name_snapshot: 'x', quantity: '1', unit_price: '5' }] } as never);
 

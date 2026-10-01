@@ -1,15 +1,14 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { hasTestDatabase } from './helpers/test-db';
-import { newId } from './helpers/sync-client';
 import { cookieFrom, jsonOf, startTestServer, type ApiClient, type TestServer } from './helpers/test-server';
 
 type Json = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
 describe.skipIf(!hasTestDatabase)('the owner manages the team', () => {
   let s: TestServer;
-  let admin: ApiClient, staff: ApiClient, otherAdmin: ApiClient;
+  let admin: ApiClient, staff: ApiClient;
 
-  beforeAll(async () => { s = await startTestServer(); admin = await s.as('admin'); staff = await s.as('staff'); otherAdmin = await s.as('otheradmin'); });
+  beforeAll(async () => { s = await startTestServer(); admin = await s.as('admin'); staff = await s.as('staff'); });
   afterAll(async () => { await s.close(); });
 
   const api = (client: ApiClient) => ({

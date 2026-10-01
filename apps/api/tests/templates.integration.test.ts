@@ -2,7 +2,6 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { hasTestDatabase } from './helpers/test-db';
 import { jsonOf, startTestServer, type ApiClient, type TestServer } from './helpers/test-server';
 
-type Json = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
 describe.skipIf(!hasTestDatabase)('editing the messages customers receive', () => {
   let s: TestServer;

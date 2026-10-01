@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { hasTestDatabase } from './helpers/test-db';
-import { createCustomer, createOrder, mutation, newId, pull, pullAll, pushOne } from './helpers/sync-client';
+import { createCustomer, createOrder, mutation, pull, pullAll, pushOne } from './helpers/sync-client';
 import { jsonOf, startTestServer, type ApiClient, type TestServer } from './helpers/test-server';
 
 const ids = (rows: Record<string, unknown>[] | undefined) => (rows ?? []).map((r) => r.id as string).sort();
