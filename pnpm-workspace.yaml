@@ -6,3 +6,11 @@ allowBuilds:
   esbuild: true
   sharp: false          # next/image uses the prebuilt binary; no install script needed
   unrs-resolver: false
+
+# Dev-only transitive packages whose parents have not yet picked up a published fix.
+# esbuild: dev-server request forgery (GHSA-67mh-4wv8-2f99), file read on Windows (GHSA-g7r4-m6w7-qqqr).
+# serialize-javascript: XSS in serialised function bodies (GHSA-gfhx-hw2g-v5hg), reached through vite-plugin-pwa.
+# Drop an entry once every parent ships a fixed version by itself.
+overrides:
+  esbuild: ">=0.28.1"
+  serialize-javascript: ">=7.1.2"
