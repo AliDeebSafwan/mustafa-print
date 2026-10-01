@@ -27,7 +27,14 @@
     "showClosed": "Show finished orders",
     "hideClosed": "Hide finished orders",
     "rejected": "Not accepted by the server",
-    "onlyWeb": "Website orders only"
+    "onlyWeb": "Website orders only",
+    "view": "View",
+    "viewList": "List",
+    "viewBoard": "Board",
+    "boardEmpty": "No orders here",
+    "overdue": "Overdue",
+    "moveTo": "Move {{order}} to {{status}}",
+    "moveFailed": "This order could not be moved. Nothing was changed; open it and try again."
   },
   "scan": {
     "title": "Scan barcode",
@@ -149,7 +156,10 @@
       "permissionDenied": "Notifications were not allowed for this site.",
       "unsupported": "This browser does not support this kind of notification.",
       "denied": "Notifications are blocked in the browser's settings."
-    }
+    },
+    "appearance": "Appearance",
+    "themeClassic": "Classic",
+    "theme2100": "2100 dark"
   },
   "update": {
     "ready": "A new version of the app is available.",
@@ -743,7 +753,19 @@
     "entries": "Entries",
     "noEntries": "No entries on this day.",
     "queueCount": "{{count}} order(s) in progress",
-    "queueEmpty": "Nothing in progress. Everything is done or delivered."
+    "queueEmpty": "Nothing in progress. Everything is done or delivered.",
+    "dayFigures": "The day in numbers",
+    "vsDayBefore": "{{change}} vs the day before",
+    "sameAsDayBefore": "Same as the day before",
+    "trendOrders": "Orders placed, last 7 days",
+    "trendRevenue": "Value of orders, last 7 days",
+    "trendUnavailable": "The last 7 days could not be loaded. The day above is up to date.",
+    "viewTable": "View as a table",
+    "date": "Date",
+    "liveFloor": "On the floor now",
+    "openBoard": "Open the board",
+    "activeOrders": "{{count}} open order(s)",
+    "overdueOrders": "{{count}} past due"
   },
   "editItems": {
     "title": "Edit order items",

@@ -1,16 +1,16 @@
-import { NavLink, Route, Routes } from 'react-router'
+import { Route, Routes } from 'react-router'
 import { useTranslation } from 'react-i18next'
+import { SectionTabs } from '../../components/SectionTabs'
 import { MediaLibrary } from '../../components/site/MediaLibrary'
-import { cn } from '../../lib/cn'
 import { GalleryScreen } from './GalleryScreen'
 import { ServicesScreen } from './ServicesScreen'
 import { ShopDetailsScreen } from './ShopDetailsScreen'
 
 const SECTIONS = [
-  { to: '', key: 'services', end: true },
-  { to: 'gallery', key: 'gallery' },
-  { to: 'media', key: 'media' },
-  { to: 'details', key: 'details' },
+  { path: '', key: 'services' },
+  { path: 'gallery', key: 'gallery' },
+  { path: 'media', key: 'media' },
+  { path: 'details', key: 'details' },
 ] as const
 
 /** The owner's editor for the customer website. Needs a connection: nothing here is kept offline. */
@@ -20,13 +20,7 @@ export function SitePage() {
     <section className="mx-auto max-w-2xl p-4">
       <h1 className="text-2xl font-extrabold">{t('site.title')}</h1>
       <p className="mt-1 text-sm text-muted">{t('site.onlineOnly')}</p>
-      <nav className="mt-4 grid grid-cols-4 border border-ink" aria-label={t('site.title')}>
-        {SECTIONS.map((s) => (
-          <NavLink key={s.key} to={s.to} end={'end' in s} className={({ isActive }) => cn('py-2.5 text-center text-sm font-semibold', isActive ? 'bg-ink text-white' : '')}>
-            {t(`site.section.${s.key}`)}
-          </NavLink>
-        ))}
-      </nav>
+      <SectionTabs base="/site" label={t('site.title')} tabs={SECTIONS.map((s) => ({ path: s.path, label: t(`site.section.${s.key}`) }))} />
       <div className="mt-4">
         <Routes>
           <Route index element={<ServicesScreen />} />

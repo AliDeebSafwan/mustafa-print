@@ -1,17 +1,26 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useState } from 'react'
-import { Link } from 'react-router'
+import { Link, useSearchParams } from 'react-router'
 import { useTranslation } from 'react-i18next'
-import { ORDER_STATUS_LABELS, TERMINAL_STATUSES, isOrderStatus, toWesternDigits } from '@mpe/shared'
-import { useCan } from '../../auth'
+import { LayoutGrid, Rows3 } from 'lucide-react'
+import { ORDER_STATUS_LABELS, TERMINAL_STATUSES, isOrderStatus, roleDefinition, toWesternDigits } from '@mpe/shared'
+import { useAuth, useCan } from '../../auth'
+import { OrderBoard } from '../../components/orders/OrderBoard'
 import { db } from '../../offline/db'
 import { asLocale, money } from '../../lib/format'
 import { inputCls, primaryBtn } from '../../lib/ui'
+import { cn } from '../../lib/cn'
 
 export function OrdersPage() {
   const { t, i18n } = useTranslation()
   const lang = asLocale(i18n.language)
   const can = useCan()
+  const auth = useAuth()
+  const role = auth.status === 'signed_in' ? roleDefinition(auth.user.role) : undefined
+  // The view lives in the address (?view=board), so the back button, a bookmark and the dashboard's link all land on it.
+  const [params, setParams] = useSearchParams()
+  const board = params.get('view') === 'board'
+  const setView = (next: 'list' | 'board') => setParams(next === 'board' ? { view: 'board' } : {}, { replace: true })
   const [query, setQuery] = useState('')
   const [showClosed, setShowClosed] = useState(false)
   const [onlyWeb, setOnlyWeb] = useState(false)
@@ -22,7 +31,7 @@ export function OrdersPage() {
     const text = toWesternDigits(query).trim().toLowerCase().replace(/^#/, '')
     const digits = text.replace(/\D/g, '')
     return orders
-      .filter((o) => showClosed || text !== '' || !(TERMINAL_STATUSES as readonly string[]).includes(o.status))
+      .filter((o) => (showClosed && !board) || (text !== '' && !board) || !(TERMINAL_STATUSES as readonly string[]).includes(o.status))
       .filter((o) => !onlyWeb || o.source === 'web')
       .map((o) => ({ order: o, customer: byId.get(o.customer_id) }))
       .filter(({ order, customer }) => text === '' ||
@@ -30,10 +39,10 @@ export function OrdersPage() {
         (digits.length >= 3 && (customer?.phone_e164 ?? '').includes(digits)))
       .sort((a, b) => (b.order.placed_at ?? '').localeCompare(a.order.placed_at ?? ''))
       .slice(0, 200)
-  }, [query, showClosed, onlyWeb], [])
+  }, [query, showClosed, onlyWeb, board], [])
 
   return (
-    <section className="mx-auto max-w-3xl p-4">
+    <section className={cn('mx-auto p-4', board ? 'max-w-7xl' : 'max-w-3xl')}>
       <div className="flex items-center justify-between gap-3">
         <h1 className="text-2xl font-extrabold">{t('orders.title')}</h1>
         <div className="flex gap-2">
@@ -42,15 +51,25 @@ export function OrdersPage() {
         </div>
       </div>
       <input className={`${inputCls} mt-4`} type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t('orders.search')} aria-label={t('orders.search')} />
-      <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm">
-        <button type="button" className="text-muted underline" onClick={() => setShowClosed((v) => !v)}>{showClosed ? t('orders.hideClosed') : t('orders.showClosed')}</button>
+      <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+        <div role="group" aria-label={t('orders.view')} className="flex overflow-hidden rounded-md border border-ink text-sm font-semibold">
+          <button type="button" aria-pressed={!board} onClick={() => setView('list')} className={cn('flex min-h-11 items-center gap-1.5 px-3', !board && 'bg-ink text-white')}>
+            <Rows3 aria-hidden className="size-4" />{t('orders.viewList')}
+          </button>
+          <button type="button" aria-pressed={board} onClick={() => setView('board')} className={cn('flex min-h-11 items-center gap-1.5 px-3', board && 'bg-ink text-white')}>
+            <LayoutGrid aria-hidden className="size-4" />{t('orders.viewBoard')}
+          </button>
+        </div>
+        {!board && <button type="button" className="text-muted underline" onClick={() => setShowClosed((v) => !v)}>{showClosed ? t('orders.hideClosed') : t('orders.showClosed')}</button>}
         <label className="flex items-center gap-1.5 font-semibold">
           <input type="checkbox" className="size-4" checked={onlyWeb} onChange={(e) => setOnlyWeb(e.target.checked)} />
           {t('orders.onlyWeb')}
         </label>
       </div>
 
-      {rows.length === 0 ? (
+      {board ? (
+        <OrderBoard rows={rows} role={role} />
+      ) : rows.length === 0 ? (
         <p className="mt-8 text-muted">{t('orders.empty')}</p>
       ) : (
         <ul className="mt-2 divide-y divide-rule border-y border-rule">

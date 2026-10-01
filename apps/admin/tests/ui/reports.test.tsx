@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import 'fake-indexeddb/auto'
-import { screen } from '@testing-library/react'
+import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -11,6 +11,7 @@ const server = vi.hoisted(() => ({
   cashClosing: { rangeStart: '', rangeEnd: '', byMethod: [] as Record<string, unknown>[], entries: [] as Record<string, unknown>[] },
   queue: [] as Record<string, unknown>[],
   dashboardCalls: [] as unknown[][], csvCalls: [] as unknown[][], csvUrl: 'blob:mock-csv',
+  dashboardByDate: {} as Record<string, Record<string, unknown>>, failDates: [] as string[],
 }))
 vi.mock('../../src/auth', async () => (await import('./harness')).authMock(session))
 vi.mock('../../src/content', async () => {
@@ -18,7 +19,11 @@ vi.mock('../../src/content', async () => {
   return {
     ...actual,
     reportsApi: {
-      dashboard: async (...args: unknown[]) => { server.dashboardCalls.push(args); return server.dashboard },
+      dashboard: async (...args: unknown[]) => {
+        server.dashboardCalls.push(args)
+        if (server.failDates.includes(args[0] as string)) throw new actual.ContentError('server')
+        return server.dashboardByDate[args[0] as string] ?? server.dashboard
+      },
       unpaid: async () => server.unpaid,
       cashClosing: async () => server.cashClosing,
       productionQueue: async () => server.queue,
@@ -31,6 +36,8 @@ import { CashClosingScreen } from '../../src/pages/reports/CashClosingScreen'
 import { DashboardScreen } from '../../src/pages/reports/DashboardScreen'
 import { ProductionQueueScreen } from '../../src/pages/reports/ProductionQueueScreen'
 import { UnpaidScreen } from '../../src/pages/reports/UnpaidScreen'
+import { createCustomerLocally, createOrderLocally } from '../../src/offline/actions'
+import { db } from '../../src/offline/db'
 import { renderAt, resetApp } from './harness'
 
 beforeEach(async () => {
@@ -39,7 +46,7 @@ beforeEach(async () => {
   Object.assign(server, {
     dashboard: { rangeStart: '2026-01-01T00:00:00Z', rangeEnd: '2026-01-02T00:00:00Z', ordersPlaced: 3, revenuePlaced: '150.00', ordersCompleted: 2, cashIn: '80.00', cashOut: '0.00', ordersDueToday: 1 },
     unpaid: [], cashClosing: { rangeStart: '', rangeEnd: '', byMethod: [], entries: [] }, queue: [],
-    dashboardCalls: [], csvCalls: [], csvUrl: 'blob:mock-csv',
+    dashboardCalls: [], csvCalls: [], csvUrl: 'blob:mock-csv', dashboardByDate: {}, failDates: [],
   })
 })
 
@@ -48,24 +55,87 @@ const openUnpaid = () => renderAt('/reports/unpaid', [{ path: '/reports/unpaid',
 const openCashClosing = () => renderAt('/reports/cash-closing', [{ path: '/reports/cash-closing', element: <CashClosingScreen /> }])
 const openQueue = () => renderAt('/reports/queue', [{ path: '/reports/queue', element: <ProductionQueueScreen /> }])
 
+/** The six days before `iso`, oldest first: what the trend asks for. */
+const weekBefore = (iso: string) => [6, 5, 4, 3, 2, 1].map((n) => new Date(Date.parse(`${iso}T00:00:00Z`) - n * 86_400_000).toISOString().slice(0, 10))
+const day = (over: Record<string, unknown>) => ({ rangeStart: '', rangeEnd: '', ordersPlaced: 0, revenuePlaced: '0.00', ordersCompleted: 0, cashIn: '0.00', cashOut: '0.00', ordersDueToday: 0, ...over })
+
 describe('the dashboard screen', () => {
   it('shows today\'s numbers formatted with the shop\'s currency', async () => {
     openDashboard()
-    expect(await screen.findByText('Orders placed')).toBeTruthy()
-    expect(screen.getByText('3')).toBeTruthy()
-    expect(screen.getByText('150.00 USD')).toBeTruthy()
-    expect(screen.getByText('80.00 USD')).toBeTruthy()
+    const tiles = within(await screen.findByRole('list', { name: 'The day in numbers', busy: false }))
+    expect(tiles.getByText('Orders placed')).toBeTruthy()
+    expect(tiles.getByText('3')).toBeTruthy()
+    expect(tiles.getByText('150.00 USD')).toBeTruthy()
+    expect(tiles.getByText('80.00 USD')).toBeTruthy()
   })
 
   it('reloads for the chosen date, and the "today"/"yesterday" shortcuts jump straight there', async () => {
     const user = userEvent.setup()
     openDashboard()
-    await screen.findByText('Orders placed')
+    await screen.findByRole('list', { name: 'The day in numbers', busy: false })
     expect(server.dashboardCalls[0]![0]).toBe(new Date().toISOString().slice(0, 10))
+    await vi.waitFor(() => expect(server.dashboardCalls).toHaveLength(7))
 
     await user.click(screen.getByRole('button', { name: 'Yesterday' }))
     const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10)
-    await vi.waitFor(() => expect(server.dashboardCalls.at(-1)![0]).toBe(yesterday))
+    await vi.waitFor(() => expect(server.dashboardCalls).toHaveLength(14))
+    expect(server.dashboardCalls[7]![0]).toBe(yesterday)                      // the chosen day first, on its own
+    expect(server.dashboardCalls.slice(8).map((c) => c[0])).toEqual(weekBefore(yesterday))
+  })
+})
+
+describe('the dashboard\'s week and live floor', () => {
+  it('shows each figure\'s change against the day before, signed, coloured by whether up is good', async () => {
+    const today = new Date().toISOString().slice(0, 10)
+    const [prev] = weekBefore(today).slice(-1)
+    server.dashboardByDate = {
+      [today]: day({ ordersPlaced: 5, revenuePlaced: '200.00', cashOut: '30.00' }),
+      [prev!]: day({ ordersPlaced: 3, revenuePlaced: '250.00', cashOut: '10.00' }),
+    }
+    openDashboard()
+    const tiles = within(await screen.findByRole('list', { name: 'The day in numbers', busy: false }))
+    const iso = (s: string) => `\u2066${s}\u2069`                         // the signed value is isolated for right-to-left text
+    const up = await tiles.findByText(`${iso('+2')} vs the day before`)
+    expect(up.parentElement!.className).toContain('text-ok')
+    const down = tiles.getByText(`${iso('−50.00 USD')} vs the day before`)
+    expect(down.parentElement!.className).toContain('text-magenta')
+    expect(tiles.getByText(`${iso('+20.00 USD')} vs the day before`).parentElement!.className).toContain('text-muted')   // paid out: neutral
+    expect(tiles.getByText('Orders placed')).toBeTruthy()
+  })
+
+  it('charts the week ending on the chosen day, with every value in a table too', async () => {
+    const today = new Date().toISOString().slice(0, 10)
+    server.dashboardByDate = Object.fromEntries([...weekBefore(today), today].map((d, i) => [d, day({ ordersPlaced: i + 1, revenuePlaced: `${(i + 1) * 10}.00` })]))
+    openDashboard()
+    const orders = await screen.findByRole('group', { name: 'Orders placed, last 7 days' })
+    expect(within(orders).getAllByRole('img')).toHaveLength(7)                 // one focusable target per day
+    const tables = screen.getAllByRole('table', { hidden: true })
+    expect(within(tables[0]!).getAllByRole('row', { hidden: true })).toHaveLength(8)   // header + 7 days
+    expect(within(tables[1]!).getByText('70.00 USD')).toBeTruthy()
+  })
+
+  it('keeps the day\'s numbers when the week behind it fails to load', async () => {
+    server.failDates = weekBefore(new Date().toISOString().slice(0, 10)).slice(0, 1)
+    openDashboard()
+    expect(await screen.findByText('The last 7 days could not be loaded. The day above is up to date.')).toBeTruthy()
+    expect(within(await screen.findByRole('list', { name: 'The day in numbers', busy: false })).getByText('150.00 USD')).toBeTruthy()
+  })
+
+  it('counts this device\'s open orders by stage, and flags the ones past due', async () => {
+    const { customer } = await createCustomerLocally({ fullName: 'Karim Saad', phone: '+96170123456', whatsappOptIn: true })
+    const make = async (status: string, dueAt: string | null = null) => {
+      const order = await createOrderLocally({ customerId: customer.id, items: [{ name: 'Flyer', quantity: 1, unitPrice: 5 }] })
+      await db.orders.update(order.id, { status, due_at: dueAt })
+    }
+    await make('printing'); await make('printing', '2020-01-01T00:00:00Z'); await make('ready'); await make('delivered')
+    openDashboard()
+    const floor = within(await screen.findByRole('region', { name: 'On the floor now' }))
+    expect(await floor.findByText('3 open order(s)')).toBeTruthy()             // delivered is not on the floor
+    expect(floor.getByText('1 past due')).toBeTruthy()
+    const printing = floor.getByText('Printing').closest('li')!
+    expect(within(printing).getByText('2')).toBeTruthy()
+    expect(printing.querySelector('.status-dot.live')).toBeTruthy()             // machines running: the light pulses
+    expect(floor.getByRole('link', { name: /Open the board/ }).getAttribute('href')).toBe('/?view=board')
   })
 })
 
