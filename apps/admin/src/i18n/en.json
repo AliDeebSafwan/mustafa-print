@@ -765,7 +765,10 @@
     "liveFloor": "On the floor now",
     "openBoard": "Open the board",
     "activeOrders": "{{count}} open order(s)",
-    "overdueOrders": "{{count}} past due"
+    "overdueOrders": "{{count}} past due",
+    "machinesTitle": "Machine status",
+    "machinesText": "Each printer's live state (printing, idle, needs attention) will show here once the machines are connected. No machine data is collected yet.",
+    "comingSoon": "Coming soon"
   },
   "editItems": {
     "title": "Edit order items",

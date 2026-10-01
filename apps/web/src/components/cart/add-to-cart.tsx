@@ -3,28 +3,22 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
-import { unitPriceFor } from "@mpe/shared/client";
 import type { PublicProduct } from "@mpe/shared";
 import { useCart } from "@/lib/cart";
 import { cleanQuantity } from "@/lib/quantity";
+import { quoteLine } from "@/lib/product-price";
 import type { Dictionary } from "@/lib/dictionaries";
 
 /**
- * Lets a shopper pick a quantity and add a product to the cart, with a live per-unit price as they type (quantity
- * tiers apply automatically). This always quotes the real price, even when the owner set price_display to "hidden"
- * on the browse page: once someone is actually ordering, they need to know what they will pay.
+ * Lets a shopper pick a quantity and add a product to the cart, with a live total as they type (quantity tiers apply
+ * automatically, and the real price is always quoted: see quoteLine).
  */
 export function AddToCart({ product, currency, t }: { product: PublicProduct; currency: string; t: Dictionary["cart"] }) {
   const cart = useCart();
   const lang = String(useParams<{ lang: string }>()?.lang ?? "ar");
-  // the API sends quantities with three decimals ("100.000"); people read and type "100"
-  const min = String(Number(product.minQuantity));
-  const [quantity, setQuantityState] = useState(min);
+  const [quantity, setQuantityState] = useState(() => quoteLine(product, "").min);
   const [added, setAdded] = useState(false);
-
-  const unit = unitPriceFor({ pricing_model: product.pricingModel, base_price: product.basePrice, price_rules: product.priceRules }, quantity || "0");
-  const lineTotal = (Number(unit) * Number(quantity || "0")).toFixed(2);
-  const belowMin = quantity.trim() !== "" && Number(quantity) < Number(min);
+  const { min, total: lineTotal, belowMin, orderable } = quoteLine(product, quantity);
 
   function setQuantity(raw: string) {
     setQuantityState(cleanQuantity(raw));
@@ -32,7 +26,7 @@ export function AddToCart({ product, currency, t }: { product: PublicProduct; cu
   }
 
   function add() {
-    if (belowMin || !quantity.trim() || Number(quantity) <= 0) return;
+    if (!orderable) return;
     cart.add(product.id, quantity);
     setAdded(true);
   }

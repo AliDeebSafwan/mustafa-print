@@ -1,11 +1,5 @@
-/** The colour bar printers add to a press sheet: cyan, magenta, yellow, key. Decorative, so hidden from assistive tech. */
+/** The colour bar printers add to a press sheet, as light: cyan, violet, magenta, yellow in one glowing line.
+ *  Decorative, so hidden from assistive tech. */
 export function ColorBar() {
-  return (
-    <div aria-hidden className="flex h-1 w-full">
-      <span className="flex-1 bg-cyan" />
-      <span className="flex-1 bg-magenta" />
-      <span className="flex-1 bg-yellow" />
-      <span className="flex-1 bg-ink" />
-    </div>
-  );
+  return <div aria-hidden className="h-[3px] w-full bg-[linear-gradient(90deg,var(--cyan),#7f00ff,var(--magenta),var(--yellow))] shadow-[0_0_14px_rgb(0_242_254/.55)]" />;
 }

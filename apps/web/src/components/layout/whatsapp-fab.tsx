@@ -4,9 +4,9 @@ import { usePathname } from "next/navigation";
 import { WhatsAppIcon } from "../ui/icons";
 
 /** Where the shop takes questions in Lebanon. Hidden where it would cover what the page is for: the cart and checkout,
- *  the account, a proof or quote being answered, and the product list (whose totals sit where the button would, and
- *  where every product already has its own WhatsApp question link). */
-const QUIET = /\/(cart|checkout|account|proof|quote|products)(\/|$)/;
+ *  the account, a proof or quote being answered, the product list (whose totals sit where the button would, and
+ *  where every product already has its own WhatsApp question link), and the studio (its live total sits there too). */
+const QUIET = /\/(cart|checkout|account|proof|quote|products|studio)(\/|$)/;
 
 export function WhatsAppFab({ href, label }: { href: string; label: string }) {
   const pathname = usePathname() ?? "";

@@ -32,10 +32,10 @@ export default async function ServicePage({ params }: PageProps<"/[lang]/service
 
   return (
     <>
-      <div className="full bg-stock py-10 sm:py-14">
+      <div className="full halftone-field border-b border-rule py-10 sm:py-14">
         <div className="grid items-center gap-8 md:grid-cols-2 md:gap-12">
           <div>
-            <h1 className="t-page">{service.title}</h1>
+            <h1 className="t-page t-glow w-fit">{service.title}</h1>
             {service.summary && <p className="t-lead mt-4">{service.summary}</p>}
             {site?.whatsapp && (
               <a className="btn btn-ink mt-7" target="_blank" rel="noopener noreferrer"
@@ -43,7 +43,7 @@ export default async function ServicePage({ params }: PageProps<"/[lang]/service
             )}
           </div>
           {service.image && (
-            <div className="overflow-hidden rounded-2xl shadow-[0_30px_50px_-28px_rgba(14,23,38,.5)]">
+            <div className="overflow-hidden rounded-2xl shadow-[0_0_0_1px_var(--edge),0_30px_60px_-28px_rgb(0_242_254/.45)]">
               <Picture image={service.image} sizes="(min-width: 768px) 50vw, 100vw" className="aspect-[4/3] w-full object-cover" priority />
             </div>
           )}

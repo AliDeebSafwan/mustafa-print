@@ -18,27 +18,38 @@
 @font-face { font-family: 'Kufam Variable'; font-style: normal; font-display: optional; font-weight: 800;
   src: url(/fonts/kufam-latin-800.woff2) format('woff2'); unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD; }
 
-/* The shop's own inks. Paper is white, "ink" is a deep blue-black (what a rich black looks like on press), and the three
-   process colours are used as whole fields rather than sprinkled: cyan, magenta and yellow are the brand. */
+/* ── Mustafa Print 2100 ──────────────────────────────────────────────────────────────────────────────────────────────
+   A print shop seen as a light source: deep space for paper, the process inks as light. Cyan, magenta and yellow are
+   still the brand, now glowing instead of printed; magenta still means one thing only, "this places or confirms an
+   order". Every text colour here was measured at 4.5:1 or better against the surface it sits on (docs/design/README.md). */
 :root {
-  --paper: #ffffff;
-  --stock: #eef2f6;
-  --ink: #0e1726;
-  --ink-2: #1b2a45;
-  --muted: #55606e;
-  --rule: #dde3ea;
+  --paper: #090d16;           /* the page: deep space */
+  --stock: #111829;           /* a raised surface: panels, fields of colour, the price box */
+  --surface: rgb(17 24 41 / .78);
+  --deep: #05080f;            /* the deepest layer: the footer */
+  --ink: #e8eef7;             /* text */
+  --ink-2: #c5cfdf;
+  --muted: #9aa6bc;
+  --rule: rgb(126 162 255 / .16);
+  --edge: rgb(0 242 254 / .28);
   --tint: var(--stock);
-  --magenta: #e5006d;
-  --magenta-deep: #c4005d;
-  --cyan: #00a3e0;
-  --yellow: #ffd500;
+  --magenta: #ff4fa8;         /* orders, and nothing else */
+  --magenta-deep: #ff7bbf;
+  --on-magenta: #1d0010;
+  --cyan: #00f2fe;
+  --blue: #4facfe;
+  --violet: #a066ff;          /* text-safe violet; #7f00ff is kept for light and glows */
+  --yellow: #ffd84d;
   --whatsapp: #128a4e;
-  color-scheme: light;
+  --glow-cyan: 0 0 0 1px rgb(0 242 254 / .28), 0 18px 48px -18px rgb(0 242 254 / .45);
+  --glow-magenta: 0 0 0 1px rgb(255 79 168 / .35), 0 18px 48px -16px rgb(255 79 168 / .55);
+  color-scheme: dark;
 }
 
 @theme inline {
   --color-paper: var(--paper);
   --color-stock: var(--stock);
+  --color-deep: var(--deep);
   --color-ink: var(--ink);
   --color-ink-2: var(--ink-2);
   --color-muted: var(--muted);
@@ -46,8 +57,11 @@
   --color-tint: var(--tint);
   --color-magenta: var(--magenta);
   --color-cyan: var(--cyan);
+  --color-blue: var(--blue);
+  --color-violet: var(--violet);
   --color-yellow: var(--yellow);
   --color-whatsapp: var(--whatsapp);
+  --color-on-magenta: var(--on-magenta);
   --font-sans: "Cairo Variable", "Segoe UI", Tahoma, system-ui, sans-serif;
   --font-display: "Kufam Variable", "Cairo Variable", "Segoe UI", Tahoma, system-ui, sans-serif;
 }
@@ -56,7 +70,18 @@ html { background: var(--paper); scroll-behavior: smooth; }
 body { color: var(--ink); font-family: var(--font-sans); line-height: 1.75; -webkit-font-smoothing: antialiased; }
 @layer base { h1, h2, h3, .font-display { font-family: var(--font-display); letter-spacing: 0; } }
 
-:focus-visible { outline: 3px solid var(--magenta); outline-offset: 3px; border-radius: 4px; }
+/* The backdrop: two soft nebulae over a faint grid, on one fixed layer, so scrolling never repaints it. */
+body::before {
+  content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(70rem 46rem at 100% -12%, rgb(127 0 255 / .22), transparent 62%),
+    radial-gradient(56rem 40rem at -12% 105%, rgb(0 242 254 / .14), transparent 62%),
+    linear-gradient(rgb(126 162 255 / .05) 1px, transparent 1px) 0 0 / 36px 36px,
+    linear-gradient(90deg, rgb(126 162 255 / .05) 1px, transparent 1px) 0 0 / 36px 36px;
+}
+::selection { background: rgb(0 242 254 / .32); }
+
+:focus-visible { outline: 3px solid var(--cyan); outline-offset: 3px; border-radius: 4px; }
 .on-dark :focus-visible { outline-color: #fff; }
 
 @media (prefers-reduced-motion: reduce) {
@@ -71,8 +96,8 @@ body { color: var(--ink); font-family: var(--font-sans); line-height: 1.75; -web
    must always be able to override them (unlayered CSS would silently win). */
 @layer components {
 /* ---- page frame ------------------------------------------------------------------------------------------------
-   Every page sits in the middle column. A section that should run edge to edge (a colour field) takes .full and pads
-   itself back in line with that column, so text stays aligned while the colour bleeds to the screen edge. */
+   Every page sits in the middle column. A section that should run edge to edge (a field) takes .full and pads
+   itself back in line with that column, so text stays aligned while the field bleeds to the screen edge. */
 .page { display: grid; grid-template-columns: [full-start] minmax(1.25rem, 1fr) [content-start] minmax(0, 68rem) [content-end] minmax(1.25rem, 1fr) [full-end]; }
 .page > * { grid-column: content; }
 .page > .full { grid-column: full; padding-inline: max(1.25rem, calc((100% - 68rem) / 2)); }
@@ -83,51 +108,84 @@ body { color: var(--ink); font-family: var(--font-sans); line-height: 1.75; -web
 .t-section { font-size: clamp(1.75rem, 4.2vw, 2.6rem); line-height: 1.35; font-weight: 800; }
 .t-page { font-size: clamp(2rem, 5vw, 3rem); line-height: 1.3; font-weight: 800; }
 .t-lead { font-size: clamp(1.05rem, 2.2vw, 1.25rem); line-height: 1.9; color: var(--muted); }
+/* Light on a headline: a cyan-to-blue fill. Text stays real text (selectable, translatable), only its paint changes. */
+.t-glow { background: linear-gradient(100deg, var(--cyan), var(--blue) 55%, var(--violet)); -webkit-background-clip: text; background-clip: text; color: transparent; }
 
-/* ---- buttons: pill-shaped, headline face. Magenta means "this places or confirms an order"; ink is for everything else. */
-.btn { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 3.1rem; padding: .55rem 1.6rem; border: 2px solid transparent; border-radius: 999px;
+/* ---- buttons: pill-shaped, headline face. Magenta means "this places or confirms an order"; cyan glass is for everything else. */
+.btn { position: relative; display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 3.1rem; padding: .55rem 1.6rem; border: 1.5px solid transparent; border-radius: 999px;
   font-family: var(--font-display); font-weight: 800; font-size: 1rem; line-height: 1.2; text-align: center; cursor: pointer;
-  transition: background-color .15s, color .15s, border-color .15s, transform .15s; }
-.btn:active { transform: translateY(1px); }
+  transition: background-color .15s, color .15s, border-color .15s, box-shadow .2s, transform .15s; }
+.btn:active { transform: translateY(1px) scale(.99); }
 .btn:disabled { opacity: .5; cursor: not-allowed; }
-.btn-ink { background: var(--ink); color: #fff; }
-.btn-ink:hover { background: var(--ink-2); }
-.btn-order { background: var(--magenta); color: #fff; }
-.btn-order:hover { background: var(--magenta-deep); }
-.btn-outline { border-color: var(--ink); color: var(--ink); background: transparent; }
-.btn-outline:hover { background: var(--ink); color: #fff; }
-.on-dark .btn-outline { border-color: #fff; color: #fff; }
-.on-dark .btn-outline:hover { background: #fff; color: var(--ink); }
-.btn-sm { min-height: 2.5rem; padding: .35rem 1.1rem; font-size: .9rem; }
+.btn-ink { background: linear-gradient(135deg, var(--cyan), var(--blue)); color: #04121f; box-shadow: 0 10px 30px -12px rgb(0 242 254 / .65); }
+.btn-ink:hover { box-shadow: var(--glow-cyan); }
+.btn-order { background: linear-gradient(135deg, var(--magenta), #ff7a59); color: var(--on-magenta); box-shadow: 0 10px 30px -12px rgb(255 79 168 / .7); }
+.btn-order:hover { box-shadow: var(--glow-magenta); }
+.btn-outline { border-color: var(--edge); color: var(--ink); background: rgb(255 255 255 / .03); }
+.btn-outline:hover { border-color: var(--cyan); background: rgb(0 242 254 / .08); box-shadow: var(--glow-cyan); }
+.on-dark .btn-outline { border-color: rgb(255 255 255 / .7); color: #fff; }
+.on-dark .btn-outline:hover { background: rgb(255 255 255 / .12); }
+.btn-sm { min-height: 2.75rem; padding: .35rem 1.1rem; font-size: .9rem; }
 
 /* ---- form controls --------------------------------------------------------------------------------------------- */
-.input { width: 100%; min-height: 3rem; padding: .6rem .9rem; border: 1.5px solid #b8c1cc; border-radius: 10px; background: #fff; font-size: 1rem; line-height: 1.5; }
-.input:hover { border-color: var(--ink); }
-.input:focus { border-color: var(--ink); outline: 3px solid color-mix(in srgb, var(--magenta) 35%, transparent); outline-offset: 0; }
+.input { width: 100%; min-height: 3rem; padding: .6rem .9rem; border: 1.5px solid rgb(126 162 255 / .3); border-radius: 10px; background: #0c1220; color: var(--ink); font-size: 1rem; line-height: 1.5; }
+.input::placeholder { color: #7d8aa3; }
+.input:hover { border-color: rgb(0 242 254 / .55); }
+.input:focus { border-color: var(--cyan); outline: 3px solid rgb(0 242 254 / .25); outline-offset: 0; }
 
-/* ---- swatch chips: a picture over a name plate, edged with one of the four process inks, like a colour chip ---------- */
-.chip { display: flex; flex-direction: column; overflow: hidden; border-radius: 14px; background: #fff; box-shadow: 0 0 0 1px var(--rule); --ink-edge: var(--cyan); }
+/* ---- glass: a panel of light. Translucent, with a hairline edge. Blur only where it overlays moving content. ------ */
+.glass { background: var(--surface); box-shadow: inset 0 1px 0 rgb(255 255 255 / .05), 0 0 0 1px var(--rule); border-radius: 20px; }
+
+/* ---- cards ("chips"): a picture over a name plate, edged in one of the inks, now lit. Hover lifts the card toward
+   you and its edge glows; transform and opacity only, so it never repaints the page. -------------------------------- */
+.chip { position: relative; display: flex; flex-direction: column; overflow: hidden; border-radius: 18px; background: var(--surface); box-shadow: inset 0 1px 0 rgb(255 255 255 / .05), 0 0 0 1px var(--rule);
+  --ink-edge: var(--cyan); transition: transform .3s cubic-bezier(.2, .7, .3, 1), box-shadow .3s; }
 .chip:nth-child(4n + 2) { --ink-edge: var(--magenta); }
 .chip:nth-child(4n + 3) { --ink-edge: var(--yellow); }
-.chip:nth-child(4n) { --ink-edge: var(--ink); }
-.chip-art { position: relative; overflow: hidden; background: var(--stock); border-block-end: 5px solid var(--ink-edge); }
-.chip-art img { width: 100%; height: 100%; object-fit: cover; transition: transform .35s ease; }
-a.chip:hover .chip-art img, button.chip:hover .chip-art img { transform: scale(1.04); }
+.chip:nth-child(4n) { --ink-edge: var(--violet); }
+.chip-art { position: relative; overflow: hidden; background: var(--stock); border-block-end: 2px solid var(--ink-edge); box-shadow: 0 6px 22px -6px var(--ink-edge); }
+.chip-art img { width: 100%; height: 100%; object-fit: cover; transition: transform .45s ease; }
 .chip-label { padding: .85rem 1rem 1.05rem; }
+@media (hover: hover) {
+  .chip:has(> a:hover), a.chip:hover, button.chip:hover { transform: translateY(-4px); box-shadow: inset 0 1px 0 rgb(255 255 255 / .06), 0 0 0 1px color-mix(in srgb, var(--ink-edge) 55%, transparent), 0 24px 50px -20px color-mix(in srgb, var(--ink-edge) 60%, transparent); }
+  .chip:has(> a:hover) .chip-art img, a.chip:hover .chip-art img, button.chip:hover .chip-art img { transform: scale(1.05); }
+}
 
-/* ---- the hero's print moment: three ink layers land in register, once, on load ---------------------------------- */
-.ink-layer { position: absolute; inset: 0; width: 100%; height: 100%; mix-blend-mode: multiply; pointer-events: none; }
+/* ---- the hero's light moment: three ink layers land in register, once, on load. On dark they add up like light
+   ("screen"), so where they overlap they brighten toward white, where on paper they darkened. ------------------- */
+.ink-layer { position: absolute; inset: 0; width: 100%; height: 100%; mix-blend-mode: screen; pointer-events: none; }
 .ink-c { animation: register-c 1.2s cubic-bezier(.2, .8, .2, 1) both; }
 .ink-m { animation: register-m 1.2s cubic-bezier(.2, .8, .2, 1) .12s both; }
 .ink-y { animation: register-y 1.2s cubic-bezier(.2, .8, .2, 1) .24s both; }
-/* A faint 45-degree halftone screen, the texture of a printed tint. */
-.halftone-field { background-image: radial-gradient(circle at center, rgba(14, 23, 38, .07) 1.2px, transparent 1.6px); background-size: 12px 12px; }
+/* A faint grid of light: the texture behind page titles. */
+.halftone-field { background-image: linear-gradient(rgb(0 242 254 / .06) 1px, transparent 1px), linear-gradient(90deg, rgb(0 242 254 / .06) 1px, transparent 1px); background-size: 24px 24px; }
+
+/* Floating: a slow drift up and down, for decorative glass beside the hero. Transform only; never starts hidden. */
+.float { animation: float 7s ease-in-out infinite; }
+.float-late { animation-delay: -3.5s; }
+
+/* A status light. .live pulses with a ring that scales out (transform), so it never repaints the page. */
+.status-dot { position: relative; display: inline-block; width: .7rem; height: .7rem; border-radius: 999px; background: currentColor; box-shadow: 0 0 12px currentColor; flex-shrink: 0; }
+.status-dot.live::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background: currentColor; animation: dot-ping 1.8s cubic-bezier(0, 0, .2, 1) infinite; }
+
+/* "Coming soon": a visible badge, never small print. */
+.soon-badge { display: inline-flex; align-items: center; gap: .35rem; padding: .2rem .7rem; border-radius: 999px; border: 1px solid rgb(255 216 77 / .55); background: rgb(255 216 77 / .1); color: var(--yellow); font-family: var(--font-display); font-weight: 800; font-size: .8rem; }
 
 /* ---- navigation links ------------------------------------------------------------------------------------------ */
-.navlink { display: inline-flex; align-items: center; min-height: 2.75rem; padding: .25rem .8rem; border-radius: 999px; font-weight: 700; font-size: .95rem; transition: background-color .15s; }
-.navlink:hover { background: var(--stock); }
+.navlink { display: inline-flex; align-items: center; white-space: nowrap; min-height: 2.75rem; padding: .25rem .8rem; border-radius: 999px; font-weight: 700; font-size: .95rem; transition: background-color .15s, color .15s; }
+.navlink:hover { background: rgb(0 242 254 / .08); color: #fff; }
 }
 
 @keyframes register-c { from { transform: translate(-6%, -4%); } to { transform: none; } }
 @keyframes register-m { from { transform: translate(6%, -5%); } to { transform: none; } }
 @keyframes register-y { from { transform: translate(0, 7%); } to { transform: none; } }
+@keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+@keyframes dot-ping { 75%, 100% { transform: scale(2.4); opacity: 0; } }
+
+/* Printing (a customer printing a quote, say) goes back to ink on paper: no deep-space page through the printer. */
+@media print {
+  :root { --paper: #fff; --stock: #f2f4f7; --surface: #fff; --deep: #fff; --ink: #0e1726; --ink-2: #1b2a45; --muted: #55606e; --rule: #dde3ea; --edge: #b8c1cc; --magenta: #c4005d; --on-magenta: #fff; color-scheme: light; }
+  body::before { display: none; }
+  .t-glow { background: none; color: var(--ink); }
+  .chip, .glass { box-shadow: 0 0 0 1px var(--rule); }
+}
