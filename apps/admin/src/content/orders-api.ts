@@ -1,6 +1,7 @@
 import { auth } from '../auth'
 import { API_URL } from '../lib/config'
-import { ContentError, type ContentErrorCode } from './api'
+import { ContentError } from './api'
+import { adminCall } from './admin-call'
 
 export interface OrderFile { id: string; order_item_id: string | null; original_name: string; kind: string; bytes: string; created_at: string }
 
@@ -8,20 +9,7 @@ export interface OrderFile { id: string; order_item_id: string | null; original_
  * Online-only actions on an order: a customer's design files, and pricing a delivery. Not part of the offline sync
  * contract on purpose — a customer's file is large and belongs to one order, not to every device.
  */
-async function call<T>(method: string, path: string, body?: unknown): Promise<T> {
-  const token = await auth.getAccessToken()
-  if (!token) throw new ContentError(typeof navigator !== 'undefined' && !navigator.onLine ? 'offline' : 'unauthorized')
-  let res: Response
-  try {
-    res = await fetch(`${API_URL}/api/v1/admin/orders${path}`, {
-      method, headers: { Authorization: `Bearer ${token}`, ...(body ? { 'Content-Type': 'application/json' } : {}) }, body: body ? JSON.stringify(body) : undefined,
-    })
-  } catch { throw new ContentError('offline') }
-  if (res.status === 204) return undefined as T
-  const payload = (await res.json().catch(() => null)) as { error?: ContentErrorCode; message?: string } | null
-  if (!res.ok) throw new ContentError(payload?.error ?? 'server', payload?.message)
-  return payload as T
-}
+const call = adminCall('/api/v1/admin/orders')
 
 export const ordersApi = {
   files: (orderId: string) => call<OrderFile[]>('GET', `/${orderId}/files`),

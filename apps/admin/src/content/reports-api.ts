@@ -1,6 +1,7 @@
 import { auth } from '../auth'
 import { API_URL } from '../lib/config'
-import { ContentError, type ContentErrorCode } from './api'
+import { ContentError } from './api'
+import { adminCall } from './admin-call'
 
 export interface DashboardReport {
   rangeStart: string; rangeEnd: string
@@ -25,22 +26,8 @@ export interface QueueRow {
   fulfillment_type: string; customer_name: string; customer_phone: string | null
 }
 
-const BASE = `${API_URL}/api/v1/admin/reports`
-const KNOWN: ContentErrorCode[] = ['unauthorized', 'forbidden', 'not_found', 'invalid_request']
-
-async function call<T>(path: string): Promise<T> {
-  const token = await auth.getAccessToken()
-  if (!token) throw new ContentError(typeof navigator !== 'undefined' && !navigator.onLine ? 'offline' : 'unauthorized')
-  let res: Response
-  try {
-    res = await fetch(`${BASE}${path}`, { headers: { Authorization: `Bearer ${token}` } })
-  } catch { throw new ContentError('offline') }
-  if (!res.ok) {
-    const payload = (await res.json().catch(() => null)) as { error?: string } | null
-    throw new ContentError(KNOWN.includes(payload?.error as ContentErrorCode) ? (payload!.error as ContentErrorCode) : 'server')
-  }
-  return (await res.json()) as T
-}
+const request = adminCall('/api/v1/admin/reports')
+const call = <T>(path: string) => request<T>('GET', path)
 
 const dateParam = (date?: string) => (date ? `?date=${date}` : '')
 
@@ -57,7 +44,7 @@ export const reportsApi = {
   async csvUrl(path: string): Promise<string> {
     const token = await auth.getAccessToken()
     if (!token) throw new ContentError('unauthorized')
-    const res = await fetch(`${BASE}${path}${path.includes('?') ? '&' : '?'}format=csv`, { headers: { Authorization: `Bearer ${token}` } })
+    const res = await fetch(`${API_URL}/api/v1/admin/reports${path}${path.includes('?') ? '&' : '?'}format=csv`, { headers: { Authorization: `Bearer ${token}` } })
     if (!res.ok) throw new ContentError('server')
     return URL.createObjectURL(await res.blob())
   },

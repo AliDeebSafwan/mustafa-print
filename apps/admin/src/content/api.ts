@@ -1,4 +1,5 @@
 import type { ContentStatus, GalleryItemInput, ServiceInput, SiteSettingsInput } from '@mpe/shared'
+import { createCall } from './call'
 
 /**
  * The owner's website editor talks to the server directly: this is office work done online, never queued offline.
@@ -19,31 +20,11 @@ export class ContentError extends Error {
 
 export interface ContentApiDeps { baseUrl: string; getToken: () => Promise<string | null>; fetchImpl?: typeof fetch }
 
-const KNOWN: ContentErrorCode[] = ['unauthorized', 'forbidden', 'not_found', 'version_conflict', 'slug_taken', 'media_in_use', 'missing_alt_text', 'invalid_image', 'invalid_request']
+/** The codes the screens have a sentence for; anything else is shown as a server fault. */
+export const KNOWN_ERROR_CODES: ContentErrorCode[] = ['unauthorized', 'forbidden', 'not_found', 'version_conflict', 'slug_taken', 'media_in_use', 'missing_alt_text', 'invalid_image', 'invalid_request']
 
-export function createContentApi({ baseUrl, getToken, fetchImpl }: ContentApiDeps) {
-  async function call<T>(method: string, path: string, body?: unknown): Promise<T> {
-    const token = await getToken()
-    if (!token) throw new ContentError(typeof navigator !== 'undefined' && !navigator.onLine ? 'offline' : 'unauthorized')
-    const isForm = body instanceof FormData
-    let res: Response
-    try {
-      res = await (fetchImpl ?? fetch)(`${baseUrl}/api/v1/admin/content${path}`, {
-        method,
-        headers: { Authorization: `Bearer ${token}`, ...(body !== undefined && !isForm ? { 'Content-Type': 'application/json' } : {}) },
-        body: body === undefined ? undefined : isForm ? body : JSON.stringify(body),
-      })
-    } catch {
-      throw new ContentError('offline')
-    }
-    if (res.status === 204) return undefined as T
-    const payload = (await res.json().catch(() => null)) as { error?: string; message?: string } | null
-    if (!res.ok) {
-      const code = KNOWN.includes(payload?.error as ContentErrorCode) ? (payload!.error as ContentErrorCode) : 'server'
-      throw new ContentError(code, payload?.message)
-    }
-    return payload as T
-  }
+export function createContentApi(deps: ContentApiDeps) {
+  const call = createCall('/api/v1/admin/content', deps)
 
   const versionedCollection = <R extends Row, I>(path: string) => ({
     list: () => call<R[]>('GET', path),
