@@ -1,0 +1,29 @@
+# للتشغيل على جهاز لا يملك عنوان IP عاماً (كمبيوتر المحل خلف راوتر): نفق Cloudflare يصل بين العنوانين
+# وهذا الجهاز، فلا حاجة إلى فتح منفذ في الراوتر ولا إلى عنوان ثابت.
+#
+#   docker compose -f compose.yaml -f compose.tunnel.yaml --env-file .env up -d --build
+#
+# ما يتغيّر عن التشغيل على خادم:
+#   - الشهادة تصدرها Cloudflare عند حافتها، فـ Caddy لا يطلب شهادة ويخدم HTTP عادياً على المنفذ 80
+#     (CADDY_SCHEME=http://). هذا الجهاز غير مرئي من الإنترنت أصلاً، فطلب شهادة من هنا يفشل.
+#   - المنفذ 80 يبقى مفتوحاً على الشبكة المحلية: مفيد للتجربة من جهاز آخر في المحل.
+#
+# قبل التشغيل، في لوحة Cloudflare (Zero Trust ← Networks ← Tunnels):
+#   1. أنشئ نفقاً واحداً وانسخ رمزه إلى CLOUDFLARE_TUNNEL_TOKEN في ملف .env.
+#   2. أضف له مسارين (Public hostnames)، كلاهما إلى العنوان الداخلي نفسه:
+#        $SITE_DOMAIN  ←  HTTP  ←  caddy:80
+#        $APP_DOMAIN   ←  HTTP  ←  caddy:80
+#      (HTTP لا HTTPS، والمنفذ 80: الشهادة عند Cloudflare، والوصلة بينها وبين Caddy داخل جهازك.)
+#      العنوانان يصلان إلى Caddy نفسه، وهو يفرّق بينهما بالاسم: الموقع للزبائن، والتطبيق للطاقم.
+#   3. الرمز سرّ يفتح نفقاً إلى شبكتك: احفظه في .env (صلاحياته 600) ولا ترسله إلى أحد.
+
+services:
+  caddy:
+    environment:
+      CADDY_SCHEME: "http://"
+
+  cloudflared:
+    image: cloudflare/cloudflared:2026.9.3
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN:?ضع رمز النفق في .env}
+    depends_on: [caddy]

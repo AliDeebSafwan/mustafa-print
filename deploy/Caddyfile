@@ -2,6 +2,10 @@
 #   SITE_DOMAIN : the customer website (e.g. almustafa-print.com)
 #   APP_DOMAIN  : the staff app and its API (e.g. app.almustafa-print.com)
 # The API lives under the staff app's own domain on purpose: the sign-in cookie is SameSite=Strict.
+#
+# CADDY_SCHEME is empty on a server of your own: Caddy answers on 443 and gets the certificates itself.
+# Behind a Cloudflare tunnel (compose.tunnel.yaml) it is "http://", so Caddy serves plain HTTP on port 80 and asks
+# for no certificate: the certificate is Cloudflare's, and this machine is never reachable from the internet.
 {
 	email {$ACME_EMAIL}
 }
@@ -16,7 +20,7 @@
 	}
 }
 
-{$SITE_DOMAIN} {
+{$CADDY_SCHEME:}{$SITE_DOMAIN} {
 	import common
 	# Visitors reach the shop's pictures and order tracking through the website's own address.
 	handle /api/v1/public/* {
@@ -31,11 +35,11 @@
 	}
 }
 
-www.{$SITE_DOMAIN} {
+{$CADDY_SCHEME:}www.{$SITE_DOMAIN} {
 	redir https://{$SITE_DOMAIN}{uri} permanent
 }
 
-{$APP_DOMAIN} {
+{$CADDY_SCHEME:}{$APP_DOMAIN} {
 	import common
 	handle /api/* {
 		reverse_proxy api:4000
