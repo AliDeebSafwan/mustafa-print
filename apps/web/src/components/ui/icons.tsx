@@ -22,3 +22,29 @@ export const PinIcon = ({ className }: { className?: string }) => (
 export const WhatsAppIcon = ({ className }: { className?: string }) => (
   <svg aria-hidden viewBox="0 0 32 32" className={className} fill="currentColor"><path d="M16.02 3C9.4 3 4.03 8.37 4.03 14.99c0 2.36.68 4.56 1.86 6.42L4 29l7.77-1.83a11.96 11.96 0 0 0 4.25 1.02h.01c6.62 0 11.99-5.37 11.99-11.99C28.03 8.37 22.64 3 16.02 3Zm0 21.9h-.01c-1.5 0-2.97-.4-4.25-1.16l-.3-.18-4.6 1.08 1.22-4.49-.2-.32a9.9 9.9 0 0 1-1.52-5.28c0-5.5 4.47-9.97 9.97-9.97 5.49 0 9.96 4.47 9.96 9.96 0 5.5-4.47 9.96-9.97 9.96Zm5.47-7.46c-.3-.15-1.77-.87-2.04-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.17-.17.2-.35.22-.65.07-.3-.15-1.27-.47-2.42-1.49-.9-.8-1.5-1.78-1.67-2.08-.17-.3-.02-.46.13-.61.14-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.67-1.62-.92-2.22-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.8.37-.27.3-1.04 1.02-1.04 2.48 0 1.46 1.07 2.87 1.22 3.07.15.2 2.1 3.2 5.08 4.49.71.31 1.26.49 1.7.63.71.23 1.36.2 1.87.12.57-.08 1.77-.72 2.02-1.42.25-.7.25-1.29.17-1.42-.07-.12-.27-.2-.57-.35Z" /></svg>
 );
+export const PrinterIcon = ({ className }: { className?: string }) => (
+  <svg {...base} className={className}><path d="M7 9V3h10v6" /><rect x="3" y="9" width="18" height="8" rx="2" /><path d="M7 14h10v7H7z" /></svg>
+);
+export const CheckIcon = ({ className }: { className?: string }) => (
+  <svg {...base} className={className}><circle cx="12" cy="12" r="9" /><path d="m8 12.5 2.8 2.8L16.5 9.5" /></svg>
+);
+/** A wireframe cube: 3D printing. */
+export const CubeIcon = ({ className }: { className?: string }) => (
+  <svg {...base} className={className}><path d="m12 2.5 8.5 4.75v9.5L12 21.5l-8.5-4.75v-9.5z" /><path d="M3.5 7.25 12 12l8.5-4.75M12 12v9.5" /></svg>
+);
+/** Sparkles: design assisted by AI. */
+export const SparkIcon = ({ className }: { className?: string }) => (
+  <svg {...base} className={className}><path d="M10 3.5 11.6 8a3 3 0 0 0 1.9 1.9L18 11.5l-4.5 1.6a3 3 0 0 0-1.9 1.9L10 19.5 8.4 15a3 3 0 0 0-1.9-1.9L2 11.5l4.5-1.6A3 3 0 0 0 8.4 8z" /><path d="M19 3v4M21 5h-4" /></svg>
+);
+/** A lightning bolt: printed on demand, straight away. */
+export const BoltIcon = ({ className }: { className?: string }) => (
+  <svg {...base} className={className}><path d="M13 2.5 4.5 13.5H12l-1 8 8.5-11H12z" /></svg>
+);
+/** A leaf: recycled and sustainable stock. */
+export const LeafIcon = ({ className }: { className?: string }) => (
+  <svg {...base} className={className}><path d="M5 19c0-8 5-14 15-14 0 10-6 15-14 15" /><path d="M5 19c3-4 6-6.5 10-8.5" /></svg>
+);
+/** Stacked sheets: paper types and surface finishes. */
+export const LayersIcon = ({ className }: { className?: string }) => (
+  <svg {...base} className={className}><path d="m12 3 9 4.5-9 4.5-9-4.5z" /><path d="m3 12 9 4.5 9-4.5" /><path d="m3 16.5 9 4.5 9-4.5" /></svg>
+);

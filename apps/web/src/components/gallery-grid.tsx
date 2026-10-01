@@ -51,7 +51,7 @@ export function GalleryGrid({ items, labels, apiBase, lead = false, eager = fals
         })}
       </ul>
 
-      <dialog ref={dialog} onClose={() => setOpen(null)} aria-label={open?.item.title} className="m-auto max-h-dvh max-w-4xl overflow-hidden rounded-[18px] bg-paper p-0 backdrop:bg-ink/80">
+      <dialog ref={dialog} onClose={() => setOpen(null)} aria-label={open?.item.title} className="m-auto max-h-dvh max-w-4xl overflow-hidden rounded-[18px] bg-stock p-0 shadow-[0_0_0_1px_var(--edge)] backdrop:bg-deep/85 backdrop:backdrop-blur-sm">
         {open && current && (
           <div className="p-4">
             <div className="flex items-start justify-between gap-4">

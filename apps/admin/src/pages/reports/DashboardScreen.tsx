@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Banknote, CalendarClock, CheckCircle2, ShoppingBag, Wallet, ArrowUpRight } from 'lucide-react'
 import { DatePicker } from '../../components/reports/report-controls'
 import { LiveFloor } from '../../components/dashboard/LiveFloor'
+import { MachinesSoon } from '../../components/dashboard/MachinesSoon'
 import { StatTile, StatTileSkeleton, type Delta } from '../../components/dashboard/StatTile'
 import { TrendChart } from '../../components/dashboard/TrendChart'
 import { ContentErrorMessage } from '../../components/site/ContentErrorMessage'
@@ -82,6 +83,7 @@ export function DashboardScreen() {
       ) : trend.error && !error && <p className="text-sm text-muted">{t('reports.trendUnavailable')}</p>}
 
       <LiveFloor />
+      <MachinesSoon />
     </div>
   )
 }

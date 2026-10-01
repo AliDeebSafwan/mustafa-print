@@ -13,7 +13,8 @@
     "products": "Products",
     "contact": "Contact",
     "menu": "Menu",
-    "close": "Close"
+    "close": "Close",
+    "studio": "Studio"
   },
   "hero": {
     "title": "Precise printing, delivered on time",
@@ -315,5 +316,48 @@
     "privacyTitle": "Privacy policy",
     "termsTitle": "Terms of use",
     "updated": "Last updated:"
+  },
+  "studio": {
+    "title": "Print Studio",
+    "intro": "Pick a product, set the quantity, and watch the real price change as you go, before you add it to your cart.",
+    "configTitle": "Build your order",
+    "pick": "Choose a product",
+    "quick": "Quick quantities",
+    "unitPrice": "Per unit",
+    "total": "Total",
+    "preview": "Your order",
+    "empty": "No products are available to order right now.",
+    "decrease": "Decrease quantity",
+    "increase": "Increase quantity",
+    "soonTitle": "Coming to the shop",
+    "soonIntro": "Services we are working on. They can't be ordered yet and have no prices so far.",
+    "soonBadge": "Coming soon",
+    "soon": [
+      {
+        "key": "3d",
+        "title": "3D printing",
+        "text": "Models and parts printed from your 3D file."
+      },
+      {
+        "key": "ai",
+        "title": "AI design studio",
+        "text": "Start your card or poster design with help from AI."
+      },
+      {
+        "key": "instant",
+        "title": "Instant print on demand",
+        "text": "Print your ready files fast, without waiting in line."
+      },
+      {
+        "key": "green",
+        "title": "Sustainable materials",
+        "text": "Recycled stock and lower-impact inks."
+      },
+      {
+        "key": "finish",
+        "title": "Paper & finish options",
+        "text": "Choose the paper type and finish (gloss, matte, laminate) right here."
+      }
+    ]
   }
 }

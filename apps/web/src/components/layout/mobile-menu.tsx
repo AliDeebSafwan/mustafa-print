@@ -24,7 +24,7 @@ export function MobileMenu({ lang, items, label, close, languageLabel }: { lang:
   }, [open, setOpen]);
 
   return (
-    <div className="lg:hidden">
+    <div className="xl:hidden">
       <button ref={button} type="button" aria-expanded={open} aria-controls="phone-menu" aria-label={open ? close : label} onClick={() => setOpen(!open)}
         className="btn btn-outline btn-sm !min-h-11 gap-2 max-sm:!size-11 max-sm:!p-0">
         <span aria-hidden className="relative block h-3 w-5">
@@ -34,7 +34,7 @@ export function MobileMenu({ lang, items, label, close, languageLabel }: { lang:
         <span aria-hidden className="max-sm:hidden">{open ? close : label}</span>
       </button>
       {open && (
-        <nav id="phone-menu" aria-label={label} className="absolute inset-x-0 top-full z-30 border-b border-rule bg-paper shadow-[0_24px_40px_-24px_rgba(14,23,38,.4)]">
+        <nav id="phone-menu" aria-label={label} className="absolute inset-x-0 top-full z-30 border-b border-rule bg-paper/95 shadow-[0_24px_40px_-20px_rgb(0_0_0/.7)] backdrop-blur-md">
           <ul className="bar flex flex-col py-2">
             {items.map((i) => <li key={i.href}><Link href={i.href} className="font-display flex min-h-14 items-center border-b border-rule text-xl font-extrabold">{i.label}</Link></li>)}
             <li className="flex min-h-14 items-center"><LocaleSwitch current={lang} label={languageLabel} /></li>
