@@ -19,7 +19,7 @@
     "db:seed": "pnpm --filter @mpe/api db:seed",
     "db:erd": "pnpm --filter @mpe/api db:erd"
   },
-  "packageManager": "pnpm@12.5.1",
+  "packageManager": "pnpm@12.8.1",
   "devDependencies": {
     "concurrently": "^10.0.5"
   }
