@@ -2,14 +2,15 @@
 
 :root {
   --paper: #ffffff; --ink: #101418; --muted: #5b6470; --rule: #d9dde3; --tint: #f4f6f8;
-  --magenta: #e5006d; --cyan: #00a3e0; --yellow: #ffd500; --ok: #0a7d4b; --warn: #b45309;
+  --magenta: #e5006d; --cyan: #00a3e0; --yellow: #ffd500; --ok: #0a7d4b; --warn: #b45309; --violet: #6d28d9;
+  --chart-1: #0090c8; --chart-2: #6d28d9; --chart-surface: #ffffff;
   color-scheme: light;
 }
 
 @theme inline {
   --color-paper: var(--paper); --color-ink: var(--ink); --color-muted: var(--muted); --color-rule: var(--rule);
   --color-tint: var(--tint); --color-magenta: var(--magenta); --color-cyan: var(--cyan); --color-yellow: var(--yellow);
-  --color-ok: var(--ok); --color-warn: var(--warn);
+  --color-ok: var(--ok); --color-warn: var(--warn); --color-violet: var(--violet);
   --font-sans: "Cairo Variable", "Segoe UI", Tahoma, system-ui, sans-serif;
 }
 
@@ -23,3 +24,99 @@ button, a, input, select { touch-action: manipulation; }
    .arrow-go   — "go to this": points left in Arabic (forward), mirrored in English.
    .arrow-back — "back": points left in English, mirrored in Arabic (back is to the right in a right-to-left page). */
 [dir="ltr"] .arrow-go, [dir="rtl"] .arrow-back { display: inline-block; transform: scaleX(-1); }
+
+/* ───────────────────────── Shared building blocks ─────────────────────────
+   Used by the redesigned screens. In the classic theme they keep the original flat, ruled look; the 2100 theme
+   below turns them into glass panels. Motion is transform/opacity only (compositor-friendly), and the global
+   prefers-reduced-motion rule above switches all of it off. */
+@layer components {
+  .panel { border: 1px solid var(--rule); background: var(--paper); }
+  .panel-lift { transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease; }
+  @media (hover: hover) { .panel-lift:hover { transform: translateY(-2px); border-color: var(--ink); } }
+  .num-col { font-variant-numeric: tabular-nums; }
+
+  /* A status light. .live pulses with a ring that scales out (transform), so it never repaints the page. */
+  .status-dot { position: relative; display: inline-block; width: .55rem; height: .55rem; border-radius: 9999px; background: currentColor; flex-shrink: 0; }
+  .status-dot.live::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background: currentColor; animation: dot-ping 1.8s cubic-bezier(0, 0, .2, 1) infinite; }
+  @keyframes dot-ping { 75%, 100% { transform: scale(2.6); opacity: 0; } }
+
+  /* Loading placeholder: a highlight slides across (transform), the block itself never repaints. */
+  .skeleton { position: relative; overflow: hidden; background: var(--tint); }
+  .skeleton::after { content: ""; position: absolute; inset: 0; transform: translateX(-100%); background: linear-gradient(90deg, transparent, rgb(255 255 255 / .45), transparent); animation: shimmer 1.4s ease-in-out infinite; }
+  @keyframes shimmer { to { transform: translateX(100%); } }
+
+  /* New content settles in once. Only below-the-fold-safe elements use it: nothing at the top of a screen starts hidden. */
+  .rise { animation: rise 260ms cubic-bezier(.2, .7, .3, 1) both; }
+  @keyframes rise { from { transform: translateY(6px); opacity: .001; } }
+
+  /* Kanban column strip: one column per screen width on a phone, snapping; side by side on wide screens. */
+  .board { display: grid; align-items: start; grid-auto-flow: column; grid-auto-columns: minmax(16.5rem, 1fr); gap: .75rem; overflow-x: auto; scroll-snap-type: x mandatory; overscroll-behavior-x: contain; padding-bottom: .5rem; }
+  .board > * { scroll-snap-align: start; }
+  .drop-ok { outline: 2px dashed var(--cyan); outline-offset: -2px; }
+  .card { border: 1px solid var(--rule); background: var(--paper); }
+}
+
+/* ───────────────────────── 2100 theme ─────────────────────────
+   Opt-in per device (Settings → Appearance), set as data-theme="2100" on <html>. Screen only: printed labels and
+   invoices keep the classic ink-on-paper tokens. Every text colour below was checked for at least 4.5:1 contrast
+   against the panel colour it sits on. */
+@media screen {
+  :root[data-theme="2100"] {
+    --paper: #090d16; --ink: #e6ecf5; --muted: #93a0b8; --rule: rgb(126 162 255 / .16); --tint: #121a2c;
+    --magenta: #ff5cad; --cyan: #00f2fe; --yellow: #ffd84d; --ok: #34e39f; --warn: #ffb547; --violet: #a066ff;
+    --surface: rgb(14 19 33 / .72); --edge: rgb(0 242 254 / .24); --field: #0d1322; --on-fill: #04121f;
+    --accent: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
+    /* Chart marks sit deeper than the neon accent: the validator's dark-mode lightness band (OKLCH 0.48–0.67)
+       rejects #00f2fe as a mark. #00a2cc and #a066ff pass every check against the panel colour. */
+    --chart-1: #00a2cc; --chart-2: #a066ff; --chart-surface: #0d1322;
+    color-scheme: dark;
+  }
+  :root[data-theme="2100"] :focus-visible { outline-color: var(--cyan); }
+  :root[data-theme="2100"] ::selection { background: rgb(0 242 254 / .3); }
+
+  /* Cosmic backdrop: two light meshes over a faint grid, on one fixed layer so scrolling never repaints it. */
+  :root[data-theme="2100"] body::before {
+    content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+    background:
+      radial-gradient(60rem 40rem at 90% -10%, rgb(127 0 255 / .20), transparent 60%),
+      radial-gradient(50rem 36rem at -10% 110%, rgb(0 242 254 / .13), transparent 60%),
+      linear-gradient(rgb(126 162 255 / .05) 1px, transparent 1px) 0 0 / 32px 32px,
+      linear-gradient(90deg, rgb(126 162 255 / .05) 1px, transparent 1px) 0 0 / 32px 32px;
+  }
+
+  /* Glass. Blur only on panels (a few per screen), never on list rows, to stay smooth on low-end phones. */
+  :root[data-theme="2100"] .panel { background: var(--surface); border-color: var(--rule); border-radius: .9rem; backdrop-filter: blur(14px) saturate(140%); -webkit-backdrop-filter: blur(14px) saturate(140%); box-shadow: inset 0 1px 0 rgb(255 255 255 / .04); }
+  :root[data-theme="2100"] .panel-lift:hover { border-color: var(--edge); box-shadow: 0 0 0 1px var(--edge), 0 12px 32px -12px rgb(0 242 254 / .35); }
+  /* Board cards: a raised surface, deliberately without blur (there can be dozens on screen at once). */
+  :root[data-theme="2100"] .card { background: rgb(18 26 44 / .92); border-radius: .7rem; }
+  :root[data-theme="2100"] .skeleton::after { background: linear-gradient(90deg, transparent, rgb(0 242 254 / .10), transparent); }
+  :root[data-theme="2100"] .status-dot { box-shadow: 0 0 10px currentColor; }
+  :root[data-theme="2100"] .app-chrome { background: rgb(9 13 22 / .78); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+  :root[data-theme="2100"] .glow-text { text-shadow: 0 0 18px rgb(0 242 254 / .45); }
+
+  /* The colour strip becomes one glowing light line. */
+  :root[data-theme="2100"] .colorbar > span { background: none; }
+  :root[data-theme="2100"] .colorbar { background: linear-gradient(90deg, #00f2fe, #7f00ff, #ff5cad, #ffd84d); box-shadow: 0 0 12px rgb(0 242 254 / .5); height: 2px; }
+}
+
+/* Where transparency is unwanted or unsupported, panels go solid: still themed, just not frosted. */
+@media screen and (prefers-reduced-transparency: reduce) {
+  :root[data-theme="2100"] .panel, :root[data-theme="2100"] .app-chrome { background: var(--tint); backdrop-filter: none; -webkit-backdrop-filter: none; }
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  @media screen { :root[data-theme="2100"] .panel, :root[data-theme="2100"] .app-chrome { background: var(--tint); } }
+}
+
+/* Existing screens use bg-ink + text-white for filled buttons and active tabs, bg-white for fields, and coloured
+   fills with white text. Re-skinned here, in the utilities layer with higher specificity, so no screen had to change
+   and the classic theme is untouched. Bright fills always carry dark text in this theme: white on neon fails contrast. */
+@layer utilities {
+  @media screen {
+    :root[data-theme="2100"] .bg-ink { background-color: #00d2f0; background-image: var(--accent); color: var(--on-fill); box-shadow: 0 0 20px -6px rgb(0 242 254 / .6); }
+    :root[data-theme="2100"] .bg-magenta { color: #1d0010; }
+    :root[data-theme="2100"] .bg-ok { color: #00170c; }
+    :root[data-theme="2100"] .bg-yellow { color: #1d1600; }
+    :root[data-theme="2100"] .bg-white { background-color: var(--field); }
+    :root[data-theme="2100"] .border-ink { border-color: var(--edge); }
+  }
+}

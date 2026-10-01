@@ -6,6 +6,7 @@ import { LOCALES, PASSWORD_MIN, roleDefinition } from '@mpe/shared'
 import { auth, useAuth, useCan } from '../auth'
 import { InvalidCredentialsError, PendingChangesError } from '../auth/auth-client'
 import { getDeviceId, requestPersistentStorage } from '../lib/device'
+import { THEMES, setTheme, useTheme } from '../lib/theme'
 import { inputCls, labelCls, primaryBtn } from '../lib/ui'
 import { db, getMeta } from '../offline/db'
 import { disablePush, enablePush, pushStatus, type PushSupport } from '../offline/push'
@@ -18,6 +19,7 @@ export function SettingsPage() {
   const last = useLiveQuery(() => getMeta<SyncResult>('lastSync'), [])
   const state = useAuth()
   const can = useCan()
+  const theme = useTheme()
   const [unsent, setUnsent] = useState<number | null>(null)
   const [persisted, setPersisted] = useState<boolean | null>(null)
   useEffect(() => { void navigator.storage?.persisted?.().then(setPersisted) }, [])
@@ -63,6 +65,15 @@ export function SettingsPage() {
             {LOCALES.map((l) => (
               <button key={l} onClick={() => void i18n.changeLanguage(l)} aria-pressed={i18n.language === l}
                 className={`border border-ink px-3 py-1 font-semibold ${i18n.language === l ? 'bg-ink text-white' : ''}`}>{l === 'ar' ? 'العربية' : 'English'}</button>
+            ))}
+          </dd>
+        </div>
+        <div className={row}>
+          <dt>{t('settings.appearance')}</dt>
+          <dd className="flex gap-2">
+            {THEMES.map((th) => (
+              <button key={th} type="button" onClick={() => setTheme(th)} aria-pressed={theme === th}
+                className={`border border-ink px-3 py-1 font-semibold ${theme === th ? 'bg-ink text-white' : ''}`}>{th === 'classic' ? t('settings.themeClassic') : t('settings.theme2100')}</button>
             ))}
           </dd>
         </div>

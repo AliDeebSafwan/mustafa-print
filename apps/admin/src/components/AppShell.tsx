@@ -28,7 +28,7 @@ export function AppShell() {
     <div className="flex h-full flex-col print:block print:h-auto">
       <div className="print:hidden"><ColorBar /><StatusBar /></div>
       <main className="min-h-0 flex-1 overflow-y-auto print:overflow-visible"><Outlet /></main>
-      <nav className="grid shrink-0 border-t border-rule pb-[env(safe-area-inset-bottom)] print:hidden" style={{ gridTemplateColumns: `repeat(${tabs.length}, 1fr)` }}>
+      <nav className="app-chrome grid shrink-0 border-t border-rule pb-[env(safe-area-inset-bottom)] print:hidden" style={{ gridTemplateColumns: `repeat(${tabs.length}, 1fr)` }}>
         {tabs.map((tab) => (
           <NavLink key={tab.to} to={tab.to} end={tab.end} className={({ isActive }) => cn('py-3.5 text-center text-sm font-semibold', isActive || (tab.key === 'orders' && pathname.startsWith('/orders')) ? 'border-t-2 border-magenta bg-tint' : 'text-muted')}>
             {t(`nav.${tab.key}`)}

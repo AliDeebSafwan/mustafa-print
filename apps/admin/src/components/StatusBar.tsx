@@ -14,7 +14,7 @@ export function StatusBar() {
   const [busy, setBusy] = useState(false)
 
   return (
-    <header className="flex items-center justify-between gap-3 border-b border-rule px-4 py-2">
+    <header className="app-chrome flex items-center justify-between gap-3 border-b border-rule px-4 py-2">
       <span className="text-lg font-extrabold">{t('brand')}</span>
       <div className="flex items-center gap-3 text-sm">
         <span className="flex items-center gap-1.5" role="status">
