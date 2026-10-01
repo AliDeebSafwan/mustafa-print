@@ -1,3 +1,4 @@
+import './util/zod-setup';   // first: no runtime code generation anywhere (see the file)
 export * from './util/locales';
 export * from './rules/order-status';
 export * from './rules/permissions';

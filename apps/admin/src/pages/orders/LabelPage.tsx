@@ -23,16 +23,20 @@ export function LabelPage() {
   if (!order) return <section className="p-4"><p>{t('order.notFound')}</p></section>
 
   const trackingLang = customer?.locale === 'en' ? 'en' : 'ar'
-  const url = `${PUBLIC_WEB_URL}/${trackingLang}/track/${order.public_code}`
+  // With the website's address the QR is the customer's tracking link; without it, just the order code, which the shop's
+  // scanner reads the same way (parseScannedCode). A printed sticker cannot be corrected, so never print a wrong link.
+  const qrText = PUBLIC_WEB_URL ? `${PUBLIC_WEB_URL}/${trackingLang}/track/${order.public_code}` : order.public_code
   return (
     <section className="mx-auto max-w-sm p-4">
       <div className="mx-auto flex w-full max-w-[16rem] flex-col items-center gap-2 border-2 border-ink p-4 text-center print:border-0">
-        <div className="w-full" aria-label={t('label.qrAlt')} role="img" dangerouslySetInnerHTML={{ __html: qrSvg(url) }} />
+        {/* Safe to inject: qrSvg draws the code as <svg>, <rect> and <path> only; the text it encodes never appears as markup. */}
+        <div className="w-full" aria-label={t('label.qrAlt')} role="img" dangerouslySetInnerHTML={{ __html: qrSvg(qrText) }} />
         <p className="text-3xl font-extrabold" dir="ltr">{order.order_number ? `#${order.order_number}` : '—'}</p>
         <p className="font-mono text-lg font-bold tracking-widest" dir="ltr">{order.public_code}</p>
         <p className="font-semibold">{customer?.full_name}</p>
         <p className="text-xs text-muted">{dateTime(order.placed_at, asLocale(i18n.language))}</p>
         {!order.order_number && <p className="text-xs text-muted print:hidden">{t('label.pending')}</p>}
+        {!PUBLIC_WEB_URL && <p role="note" className="text-xs font-semibold text-warn print:hidden">{t('label.noWebsite')}</p>}
       </div>
       <div className="mt-4 flex gap-2 print:hidden">
         <button className={`${primaryBtn} flex-1`} onClick={() => window.print()}>{t('label.print')}</button>

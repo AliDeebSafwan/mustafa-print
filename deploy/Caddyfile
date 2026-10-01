@@ -45,6 +45,15 @@ www.{$SITE_DOMAIN} {
 	}
 	handle {
 		root * /srv/admin
+		# The staff app holds orders, customers and money, so it gets the strictest policy. Everything it loads comes
+		# from this same address (scripts, styles, the API under /api/*), so 'self' is enough. Inline styles stay
+		# allowed because React sets style attributes; no inline script is needed (the theme starts from
+		# /theme-boot.js). Never framed by another site (clickjacking), and the camera only for its own scanner.
+		header {
+			Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
+			X-Frame-Options DENY
+			Permissions-Policy "camera=(self), microphone=(), geolocation=(), payment=()"
+		}
 		# Built files carry their hash in the name: cache them forever. The service worker must always be fresh,
 		# or staff would stay on an old version of the app.
 		@hashed path /assets/*

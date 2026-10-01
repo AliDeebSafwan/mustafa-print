@@ -11,7 +11,11 @@ export async function pushStatus(): Promise<PushSupport> {
   return sub ? 'subscribed' : 'not-subscribed'
 }
 
-function toBase64Url(base64: string): Uint8Array<ArrayBuffer> {
+/**
+ * The server's VAPID public key arrives as base64url text; the browser's push subscription wants its raw bytes
+ * (applicationServerKey, per the Web Push standard). Decoding a public key, nothing more.
+ */
+function base64UrlToBytes(base64: string): Uint8Array<ArrayBuffer> {
   const padded = (base64 + '='.repeat((4 - (base64.length % 4)) % 4)).replace(/-/g, '+').replace(/_/g, '/')
   const raw = atob(padded)
   const bytes = new Uint8Array(new ArrayBuffer(raw.length))
@@ -27,7 +31,7 @@ export async function enablePush(): Promise<void> {
   const permission = await Notification.requestPermission()
   if (permission !== 'granted') throw new Error('permission_denied')
   const reg = await navigator.serviceWorker.ready
-  const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: toBase64Url(publicKey) })
+  const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: base64UrlToBytes(publicKey) })
   await pushApi.subscribe(sub.toJSON() as PushSubscriptionJSON)
 }
 

@@ -8,8 +8,8 @@
     <meta name="theme-color" content="#101418" />
     <meta name="robots" content="noindex" />
     <title>مطبعة المصطفى | الإدارة</title>
-    <!-- Applies the device's chosen theme before the first paint (see src/lib/theme.ts; keep the key in step). -->
-    <script>try { if (localStorage.getItem('mpe.theme') === '2100') { document.documentElement.dataset.theme = '2100'; document.querySelector('meta[name="theme-color"]').content = '#090d16' } } catch (e) {}</script>
+    <!-- Blocking on purpose: it sets the theme before the first paint (see public/theme-boot.js). -->
+    <script src="/theme-boot.js"></script>
   </head>
   <body>
     <div id="root"></div>

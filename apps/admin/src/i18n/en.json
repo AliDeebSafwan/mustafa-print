@@ -347,7 +347,8 @@
   "label": {
     "qrAlt": "QR code for tracking the order",
     "print": "Print",
-    "pending": "The final order number appears after syncing"
+    "pending": "The final order number appears after syncing",
+    "noWebsite": "The website address is not set in this build, so the code holds the order code only: the shop can scan it, but customers cannot open their tracking page from it."
   },
   "reason": {
     "unknown": "unknown reason",
