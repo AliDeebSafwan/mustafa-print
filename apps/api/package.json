@@ -16,7 +16,8 @@
     "db:erd": "tsx scripts/erd.ts",
     "db:pull": "drizzle-kit pull",
     "wa:templates": "tsx scripts/whatsapp-templates.ts",
-    "email:test": "tsx scripts/email-test.ts"
+    "email:test": "tsx scripts/email-test.ts",
+    "staff:reset-password": "tsx scripts/staff-reset-password.ts"
   },
   "dependencies": {
     "@mpe/shared": "workspace:*",
