@@ -17,7 +17,12 @@ export function CartView({ lang, t, checkoutLabel, apiBase, currency }: { lang: 
   const [products, setProducts] = useState<PublicProduct[] | null>(null);
 
   useEffect(() => {
-    fetch(`/api/v1/public/site/products?lang=${lang}`).then((r) => r.json()).then(setProducts).catch(() => setProducts([]));
+    // An HTTP error still carries a JSON body ({"error":"too_many_attempts"}), so without the status check that
+    // object became `products` and the `.some`/`.map` below threw — a blank cart. Treated like any other failure.
+    fetch(`/api/v1/public/site/products?lang=${lang}`)
+      .then((r) => { if (!r.ok) throw new Error(`products responded ${r.status}`); return r.json(); })
+      .then(setProducts)
+      .catch(() => setProducts([]));
   }, [lang]);
 
   // Derived during render, not stored: whether any cart line points at a product that no longer exists.

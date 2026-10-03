@@ -39,7 +39,14 @@ export function CheckoutForm({ lang, t, accountT, totalLabel, currency, apiBase 
   const requestId = useRef(crypto.randomUUID());   // stable across retries, so a resubmit never creates a second order
 
   useEffect(() => { account.me().then(setMe, () => setMe(null)); }, []);
-  useEffect(() => { fetch(`/api/v1/public/site/products?lang=${lang}`).then((r) => r.json()).then(setProducts).catch(() => setProducts([])); }, [lang]);
+  // The status check matters: an HTTP error carries a JSON body, which without it became `products` and made the
+  // `byId` map below throw — a blank checkout mid-purchase. Treated like any other failure.
+  useEffect(() => {
+    fetch(`/api/v1/public/site/products?lang=${lang}`)
+      .then((r) => { if (!r.ok) throw new Error(`products responded ${r.status}`); return r.json(); })
+      .then(setProducts)
+      .catch(() => setProducts([]));
+  }, [lang]);
 
   if (me === undefined || !products) return <p role="status" className="mt-8 text-muted">…</p>;
   if (!me) return <div className="mt-8 max-w-md"><Notice kind="info">{t.signInFirst}</Notice><div className="mt-4"><SignedOut lang={lang} t={accountT} onSignedIn={setMe} /></div></div>;
