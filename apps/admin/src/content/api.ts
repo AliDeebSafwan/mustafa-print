@@ -19,7 +19,8 @@ export class ContentError extends Error {
 
 export interface ContentApiDeps { baseUrl: string; getToken: () => Promise<string | null>; fetchImpl?: typeof fetch }
 
-const KNOWN: ContentErrorCode[] = ['unauthorized', 'forbidden', 'not_found', 'version_conflict', 'slug_taken', 'media_in_use', 'missing_alt_text', 'invalid_image', 'invalid_request']
+/** The codes the screens have wording for (see `site.error.*` in i18n). Anything else is reported as `server`. */
+export const KNOWN_ERROR_CODES: ContentErrorCode[] = ['unauthorized', 'forbidden', 'not_found', 'version_conflict', 'slug_taken', 'media_in_use', 'missing_alt_text', 'invalid_image', 'invalid_request']
 
 export function createContentApi({ baseUrl, getToken, fetchImpl }: ContentApiDeps) {
   async function call<T>(method: string, path: string, body?: unknown): Promise<T> {
@@ -39,7 +40,7 @@ export function createContentApi({ baseUrl, getToken, fetchImpl }: ContentApiDep
     if (res.status === 204) return undefined as T
     const payload = (await res.json().catch(() => null)) as { error?: string; message?: string } | null
     if (!res.ok) {
-      const code = KNOWN.includes(payload?.error as ContentErrorCode) ? (payload!.error as ContentErrorCode) : 'server'
+      const code = KNOWN_ERROR_CODES.includes(payload?.error as ContentErrorCode) ? (payload!.error as ContentErrorCode) : 'server'
       throw new ContentError(code, payload?.message)
     }
     return payload as T

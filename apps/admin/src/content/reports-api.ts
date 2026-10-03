@@ -1,6 +1,6 @@
-import { auth } from '../auth'
-import { API_URL } from '../lib/config'
-import { ContentError, type ContentErrorCode } from './api'
+import { adminApi } from './call'
+
+const { call, blobUrl } = adminApi('reports')
 
 export interface DashboardReport {
   rangeStart: string; rangeEnd: string
@@ -25,40 +25,17 @@ export interface QueueRow {
   fulfillment_type: string; customer_name: string; customer_phone: string | null
 }
 
-const BASE = `${API_URL}/api/v1/admin/reports`
-const KNOWN: ContentErrorCode[] = ['unauthorized', 'forbidden', 'not_found', 'invalid_request']
-
-async function call<T>(path: string): Promise<T> {
-  const token = await auth.getAccessToken()
-  if (!token) throw new ContentError(typeof navigator !== 'undefined' && !navigator.onLine ? 'offline' : 'unauthorized')
-  let res: Response
-  try {
-    res = await fetch(`${BASE}${path}`, { headers: { Authorization: `Bearer ${token}` } })
-  } catch { throw new ContentError('offline') }
-  if (!res.ok) {
-    const payload = (await res.json().catch(() => null)) as { error?: string } | null
-    throw new ContentError(KNOWN.includes(payload?.error as ContentErrorCode) ? (payload!.error as ContentErrorCode) : 'server')
-  }
-  return (await res.json()) as T
-}
-
 const dateParam = (date?: string) => (date ? `?date=${date}` : '')
 
 export const reportsApi = {
-  dashboard: (date?: string) => call<DashboardReport>(`/dashboard${dateParam(date)}`),
-  unpaid: () => call<UnpaidRow[]>('/unpaid'),
-  cashClosing: (date?: string) => call<CashClosingReport>(`/cash-closing${dateParam(date)}`),
-  productionQueue: () => call<QueueRow[]>('/production-queue'),
+  dashboard: (date?: string) => call<DashboardReport>('GET', `/dashboard${dateParam(date)}`),
+  unpaid: () => call<UnpaidRow[]>('GET', '/unpaid'),
+  cashClosing: (date?: string) => call<CashClosingReport>('GET', `/cash-closing${dateParam(date)}`),
+  productionQueue: () => call<QueueRow[]>('GET', '/production-queue'),
   /**
    * A CSV download needs the same bearer token as everything else here, so a plain link cannot carry it: this
    * fetches the file with the token and hands back a local URL the caller can click, exactly like a customer's
    * design file download.
    */
-  async csvUrl(path: string): Promise<string> {
-    const token = await auth.getAccessToken()
-    if (!token) throw new ContentError('unauthorized')
-    const res = await fetch(`${BASE}${path}${path.includes('?') ? '&' : '?'}format=csv`, { headers: { Authorization: `Bearer ${token}` } })
-    if (!res.ok) throw new ContentError('server')
-    return URL.createObjectURL(await res.blob())
-  },
+  csvUrl: (path: string) => blobUrl(`${path}${path.includes('?') ? '&' : '?'}format=csv`),
 }
