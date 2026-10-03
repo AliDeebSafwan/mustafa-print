@@ -3,14 +3,26 @@
 const CROCKFORD = '0123456789ABCDEFGHJKMNPQRSTVWXYZ'; // 32 symbols, no I L O U
 
 /** Random, unguessable code for barcodes and tracking URLs. 12 chars = 60 bits. */
-export function generatePublicCode(length = 12): string {
+export const PUBLIC_CODE_LENGTH = 12;
+
+export function generatePublicCode(length = PUBLIC_CODE_LENGTH): string {
   const bytes = new Uint8Array(length);
   crypto.getRandomValues(bytes);
   let out = '';
   for (const b of bytes) out += CROCKFORD[b & 31]; // 256 % 32 === 0 -> no modulo bias
   return out;
 }
+
+/** Reading a code: permissive, because it must keep matching every code already printed on a label or in a link. */
 export const PUBLIC_CODE_RE = /^[0-9A-HJKMNP-TV-Z]{10,16}$/;
+
+/**
+ * Minting a code: exactly what generatePublicCode produces. An offline device makes an order's code itself — it has to,
+ * because the label and its QR are printed at the counter before any sync. That means the code arrives from the client,
+ * so the one property the server can still insist on is its size: accepting the read regex here would let a device
+ * register a 10-character code, and that code is the only credential guarding /public/orders/:code.
+ */
+export const MINTED_PUBLIC_CODE_RE = new RegExp(`^[0-9A-HJKMNP-TV-Z]{${PUBLIC_CODE_LENGTH}}$`);
 
 /** UUIDv7: time-ordered, so IDB/Postgres indexes stay append-friendly. */
 export function uuidv7(now: number = Date.now()): string {

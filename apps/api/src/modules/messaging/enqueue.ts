@@ -110,10 +110,14 @@ export async function enqueueOrderNotification(q: Queryable, orderId: string, st
  * queue this offline and safely retry the exact same mutation without ever sending the message twice.
  */
 export async function enqueueManualMessage(
-  q: Queryable, id: string, orderId: string, opts: { channel: Channel; body: string; createdBy: string | null },
+  q: Queryable, id: string, orderId: string, opts: { channel: Channel; body: string; createdBy: string | null; branchId: string },
 ): Promise<EnqueueResult> {
   const ctx = await loadOrderContext(q, orderId);
-  if (!ctx) return { queued: false, reason: 'order_not_found' };
+  // The order id comes straight from a device, and loadOrderContext finds an order by id in ANY branch — it is used by
+  // callers that scoped the order themselves first. This one did not, so the branch is checked here: without it, anyone
+  // with notifications:send could message another branch's customer, in text they chose, billed to the shop.
+  // `branchId` is required rather than optional so a future caller cannot omit it and quietly reopen this.
+  if (!ctx || ctx.order.branchId !== opts.branchId) return { queued: false, reason: 'order_not_found' };
 
   const consent: Record<Channel, boolean> = { whatsapp: ctx.customer.whatsappOptIn, sms: ctx.customer.smsOptIn, email: ctx.customer.emailOptIn };
   const recipient: Record<Channel, string | null> = { whatsapp: ctx.customer.phone, sms: ctx.customer.phone, email: ctx.customer.email };

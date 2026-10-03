@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { parseEnv } from '../src/config/env';
 
 const secret = 'a-real-secret-generated-for-this-server-'.padEnd(48, 'x');
+/** The signing key this repository published in apps/api/.env.example. Burned forever; the server must refuse it. */
+const PUBLISHED_JWT_SECRET = '1q2w3e4r5t6y7u8i9o0p1a2s3d4f5g6h7j8k9l0zxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM';
 const production = {
   NODE_ENV: 'production', DATABASE_URL: 'postgres://db', JWT_ACCESS_SECRET: secret,
   PUBLIC_WEB_URL: 'https://almustafa-print.com', CORS_ORIGINS: 'https://app.almustafa-print.com',
@@ -26,8 +28,20 @@ describe('production configuration', () => {
   });
 
   it('refuses the JWT secret published in the example file: anyone could sign an admin token with it', () => {
-    expect(() => parseEnv({ ...production, JWT_ACCESS_SECRET: '1q2w3e4r5t6y7u8i9o0p1a2s3d4f5g6h7j8k9l0zxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM' }))
-      .toThrow(/JWT_ACCESS_SECRET: is the published example value/);
+    expect(() => parseEnv({ ...production, JWT_ACCESS_SECRET: PUBLISHED_JWT_SECRET }))
+      .toThrow(/JWT_ACCESS_SECRET: this value was committed to the repository and is public/);
+  });
+
+  it('refuses a published secret in development too: a leaked key is leaked wherever it is used', () => {
+    // The first version of this check ran only in production. A developer machine signing tokens with a key anyone can
+    // read is the same hole, and a value that reaches a laptop usually reaches the server it deploys to.
+    expect(() => parseEnv({ DATABASE_URL: 'postgres://db', JWT_ACCESS_SECRET: PUBLISHED_JWT_SECRET }))
+      .toThrow(/is public/);
+  });
+
+  it('refuses a published value under any setting, not only the JWT secret', () => {
+    expect(() => parseEnv({ ...production, WEB_REVALIDATE_URL: 'https://almustafa-print.com/api/revalidate', WEB_REVALIDATE_SECRET: PUBLISHED_JWT_SECRET }))
+      .toThrow(/WEB_REVALIDATE_SECRET: this value was committed to the repository and is public/);
   });
 
   it('still allows local production-mode testing over http when that is said explicitly', () => {

@@ -17,6 +17,19 @@ type Row = Record<string, unknown>;
 
 export interface WebOrderDeps { pool: Pool; storage: MediaStorage; scanner: FileScanner; publicWebUrl: string; onPublicChange?: () => void; push?: PushService }
 
+/**
+ * What one account may upload. Without these, a single signed-in customer could keep 100 MB designs coming until the
+ * server's disk filled — and on this deployment the media directory and the database share that disk, so running out
+ * takes PostgreSQL down with it. The per-IP limiter on the route cannot help: one account, one address, all day.
+ *
+ * The hourly pair bounds throughput. The unattached cap bounds what can be *held*: files tied to a real order are the
+ * shop's own records and are never counted against a returning customer, while uploads nobody turned into an order
+ * are the abusable kind — those expire after a day (see pruneUnattached).
+ */
+const UPLOADS_PER_HOUR = 20;
+const UPLOAD_BYTES_PER_HOUR = 400 * 1024 * 1024;
+const UNATTACHED_BYTES_PER_ACCOUNT = 300 * 1024 * 1024;
+
 /** A customer must have proven their email before ordering: the shop needs a way to reach them about it. */
 function assertMayOrder(account: CustomerAccountRow): asserts account is CustomerAccountRow & { customer_id: string } {
   if (!account.email_verified_at || !account.customer_id) throw new HttpError(403, 'email_not_verified', 'Confirm your email before ordering');
@@ -26,10 +39,30 @@ export type WebOrderService = ReturnType<typeof createWebOrderService>;
 
 export function createWebOrderService({ pool, storage, scanner, publicWebUrl, push }: WebOrderDeps) {
   // ---- design files -----------------------------------------------------------------------------------------------
+  /**
+   * How much this account has already uploaded. Checked before the file is identified, scanned or stored, so a caller
+   * over their quota costs nothing but the query.
+   *
+   * Not locked: two uploads racing can both pass and land a little over the cap. That is the right trade for a quota —
+   * it bounds the disk, it is not an accounting figure — and a lock here would be held across the scan and the write.
+   */
+  async function assertWithinUploadQuota(accountId: string, bytes: number): Promise<void> {
+    const { rows } = await pool.query<{ recent_files: number; recent_bytes: string; unattached_bytes: string }>(
+      `SELECT count(*) FILTER (WHERE created_at > clock_timestamp() - interval '1 hour')::int                   AS recent_files,
+              coalesce(sum(bytes) FILTER (WHERE created_at > clock_timestamp() - interval '1 hour'), 0)::text   AS recent_bytes,
+              coalesce(sum(bytes) FILTER (WHERE order_id IS NULL), 0)::text                                     AS unattached_bytes
+         FROM order_files WHERE uploaded_by_account = $1 AND deleted_at IS NULL`, [accountId]);
+    const used = rows[0]!;
+    if (used.recent_files >= UPLOADS_PER_HOUR) throw new HttpError(429, 'too_many_attempts', 'upload_quota_hourly');
+    if (Number(used.recent_bytes) + bytes > UPLOAD_BYTES_PER_HOUR) throw new HttpError(429, 'too_many_attempts', 'upload_quota_hourly');
+    if (Number(used.unattached_bytes) + bytes > UNATTACHED_BYTES_PER_ACCOUNT) throw new HttpError(429, 'too_many_attempts', 'upload_quota_unattached');
+  }
+
   /** Keeps an uploaded design, if it really is one of the accepted kinds. The temporary upload is always removed. */
   async function uploadDesign(account: CustomerAccountRow, upload: { path: string; originalName: string; bytes: number }): Promise<Row> {
     try {
       assertMayOrder(account);
+      await assertWithinUploadQuota(account.id, upload.bytes);
       const kind = await detectDesignKind(upload.path);
       if (!kind) throw new HttpError(400, 'invalid_request', 'unsupported_file');
       await assertFileIsClean(scanner, upload.path);

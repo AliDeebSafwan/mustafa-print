@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
-  ORDER_STATUSES, ORDER_STATUS_TRANSITIONS, canTransition, generatePublicCode, PUBLIC_CODE_RE, uuidv7,
+  ORDER_STATUSES, ORDER_STATUS_TRANSITIONS, canTransition, generatePublicCode, PUBLIC_CODE_RE, MINTED_PUBLIC_CODE_RE, uuidv7,
   hasPermission, ROLE_DEFINITIONS, canMoveToStatus, roleDefinition, TERMINAL_STATUSES,
-  effectivePermissions, TOGGLEABLE_PERMISSIONS,
+  effectivePermissions, TOGGLEABLE_PERMISSIONS, orderInsertPayload,
 } from './index';
 
 describe('order status machine', () => {
@@ -30,9 +30,21 @@ describe('ids', () => {
     for (let i = 0; i < 2000; i++) {
       const c = generatePublicCode();
       expect(c).toMatch(PUBLIC_CODE_RE);
+      expect(c).toMatch(MINTED_PUBLIC_CODE_RE);
       seen.add(c);
     }
     expect(seen.size).toBe(2000);
+  });
+  it('refuses to mint a code shorter than full entropy, while still reading older ones', () => {
+    // A device makes its own code offline, so the server can only insist on the size. 10 chars is 50 bits, and that
+    // code is the sole credential on the public tracking link.
+    expect(PUBLIC_CODE_RE.test('ABCDEFGHJK')).toBe(true);
+    expect(MINTED_PUBLIC_CODE_RE.test('ABCDEFGHJK')).toBe(false);
+    expect(MINTED_PUBLIC_CODE_RE.test(generatePublicCode())).toBe(true);
+    expect(orderInsertPayload.safeParse({
+      public_code: 'ABCDEFGHJK', customer_id: '11111111-1111-4111-8111-111111111111',
+      items: [{ id: '22222222-2222-4222-8222-222222222222', name_snapshot: 'card', quantity: '1', unit_price: '1' }],
+    }).success).toBe(false);
   });
   it('uuidv7 is a valid v7 uuid and sorts by time', () => {
     const a = uuidv7(1_700_000_000_000);

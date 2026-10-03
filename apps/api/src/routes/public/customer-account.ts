@@ -1,4 +1,3 @@
-import { rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { Router, type Request, type RequestHandler, type Response } from 'express';
 import multer from 'multer';
@@ -7,13 +6,16 @@ import { customerEmailInput, customerLoginInput, customerResetInput, customerSig
 import { HttpError, parseWith } from '../../http-error';
 import { readCookie } from '../../modules/auth/cookies';
 import { requireAllowedOrigin } from '../../modules/auth/middleware';
-import type { CustomerAuthService } from '../../modules/customer-auth/customer-auth.service';
+import type { CustomerAccountRow, CustomerAuthService } from '../../modules/customer-auth/customer-auth.service';
 import type { WebOrderService } from '../../modules/orders/web-orders.service';
 
 export const CUSTOMER_COOKIE = 'mpe_customer';
 /** Only the account endpoints ever receive the customer's session. */
 const COOKIE_PATH = '/api/v1/public/account';
 const SESSION_MS = 30 * 24 * 60 * 60 * 1000;
+
+/** An upload request after `requireAccount` has resolved whose session it is. */
+type UploadRequest = Request & { customerAccount?: CustomerAccountRow };
 
 /**
  * Customer accounts on the website. Reached through the website's own address (Caddy in production, a Next.js rewrite
@@ -41,7 +43,7 @@ export function customerAccountRouter(deps: { service: CustomerAuthService; orde
     await service.signup(parseWith(customerSignupInput, req.body));
     checkEmail(res);                                   // the same answer whether or not the email already had an account
   });
-  router.post('/verify', sameSite, async (req, res) => {
+  router.post('/verify', strict, sameSite, async (req, res) => {
     const token = await service.verifyEmail(parseWith(customerTokenInput, req.body).token, req.get('user-agent'));
     setSession(res, token);
     res.json(service.me((await service.accountFor(token))!));
@@ -80,13 +82,21 @@ export function customerAccountRouter(deps: { service: CustomerAuthService; orde
   });
   const uploads = rateLimit({ windowMs: 60 * 60_000, limit: 60, standardHeaders: 'draft-7', legacyHeaders: false, message: { error: 'too_many_attempts' } });
 
-  router.post('/files', uploads, sameSite, designUpload, async (req, res) => {
-    if (!req.file) throw new HttpError(400, 'invalid_request', 'No file was sent');
+  /**
+   * Resolves the session BEFORE the body is read. Checking afterwards still answered 401, but only once multer had
+   * written up to DESIGN_FILE_LIMIT_BYTES to disk and deleted it again — so a stranger could spend the server's
+   * bandwidth and disk at will, and leave nothing behind to notice.
+   */
+  const requireAccount: RequestHandler = async (req, _res, next) => {
     const account = await service.accountFor(sessionOf(req));
-    if (!account) {
-      await rm(req.file.path, { force: true });        // never keep an anonymous upload
-      throw new HttpError(401, 'unauthorized');
-    }
+    if (!account) throw new HttpError(401, 'unauthorized');
+    (req as UploadRequest).customerAccount = account;
+    next();
+  };
+
+  router.post('/files', uploads, sameSite, requireAccount, designUpload, async (req, res) => {
+    if (!req.file) throw new HttpError(400, 'invalid_request', 'No file was sent');
+    const account = (req as UploadRequest).customerAccount!;   // requireAccount ran first or this handler never did
     res.status(201).json(await deps.orders.uploadDesign(account, { path: req.file.path, originalName: req.file.originalname, bytes: req.file.size }));
   });
   router.post('/orders', strict, sameSite, async (req, res) => {

@@ -15,6 +15,9 @@ jobs:
       TEST_DATABASE_URL: postgres://ci:ci@localhost:5432/postgres
     steps:
       - uses: actions/checkout@v4
+      # First, and before anything is installed: a committed secret is a published secret, and this repository is public.
+      - name: no committed secrets
+        run: ./scripts/check-committed-secrets.sh
       - uses: actions/setup-node@v4
         with: { node-version: 22 }
       - run: corepack enable

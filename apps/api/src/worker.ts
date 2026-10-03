@@ -13,7 +13,7 @@ import { createDailySummaryService } from './modules/reports/daily-summary.servi
 
 const env = getEnv();
 const log = createLogger(env.LOG_LEVEL, env.NODE_ENV === 'development');
-const pool = createPool(env.DATABASE_URL);
+const pool = createPool(env.DATABASE_URL, (err) => log.error({ err }, 'idle database connection failed'));
 const providers = buildProviders(env, log);
 const worker = startOutboxWorker({ pool, providers, log, intervalMs: env.WORKER_POLL_INTERVAL_MS, batchSize: env.WORKER_BATCH_SIZE });
 // Housekeeping: drop long-expired sessions and stale login-throttle rows.

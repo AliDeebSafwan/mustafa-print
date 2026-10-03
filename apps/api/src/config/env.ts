@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { config as loadDotenv } from 'dotenv';
 loadDotenv({ quiet: true });
 import { z } from 'zod';
@@ -7,10 +8,23 @@ z.config({ jitless: true });
 const csv = (s: string) => s.split(',').map((x) => x.trim()).filter(Boolean);
 
 /**
- * JWT secrets that have been published in this repository's example files. They are public knowledge, so anyone could
- * sign their own admin token with them: a production server must never start with one.
+ * Values that were once committed to this repository and are therefore public forever. `.env.example` used to carry a
+ * ready-made JWT signing secret, and copying that file is exactly what the README tells a new machine to do — so a
+ * deployment could end up signing staff tokens with a key anyone can read, and forge any role. The server refuses to
+ * start on one instead of running insecurely. Kept as sha256 digests so the plaintext is not republished here.
  */
-const PUBLISHED_EXAMPLE_SECRETS = new Set(['1q2w3e4r5t6y7u8i9o0p1a2s3d4f5g6h7j8k9l0zxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM']);
+const LEAKED_DIGESTS = new Set([
+  'e0387e785d44c159c2c321d97306e874e0d60efa2f66fe09910d0d21f1a56353',   // the old JWT_ACCESS_SECRET
+  'e9001b79ba46aa909783d36f1f8274d498a82da37b3d34c955dd70ff3f2943a1',   // the old SEED_ADMIN_PASSWORD
+  'f757709ea42f2f0823bb63b83613f116c77b4215b565786ec8b19c2a662e6c93',   // the old database password
+]);
+
+/** True for a secret this repository has already made public. Rotate it; never work around this check. */
+export const isLeakedSecret = (value: string): boolean =>
+  LEAKED_DIGESTS.has(createHash('sha256').update(value).digest('hex'));
+
+export const LEAKED_SECRET_MESSAGE =
+  'this value was committed to the repository and is public: generate a new one with `openssl rand -base64 48`';
 
 /** A real public address: https, and not this machine. Dev defaults (http://localhost) must never reach production. */
 function isPublicHttpsUrl(value: string): boolean {
@@ -86,6 +100,11 @@ const schema = z
         if (!(v as Record<string, unknown>)[k]) ctx.addIssue({ code: 'custom', path: [k], message: `${k} is required for the selected provider` });
       }
     };
+    // Every secret this file accepts, checked against what the repository has already published.
+    for (const k of ['JWT_ACCESS_SECRET', 'WEB_REVALIDATE_SECRET', 'WHATSAPP_ACCESS_TOKEN', 'WHATSAPP_APP_SECRET', 'WHATSAPP_WEBHOOK_VERIFY_TOKEN', 'RESEND_API_KEY', 'VAPID_PRIVATE_KEY'] as const) {
+      const value = (v as Record<string, unknown>)[k];
+      if (typeof value === 'string' && value && isLeakedSecret(value)) ctx.addIssue({ code: 'custom', path: [k], message: LEAKED_SECRET_MESSAGE });
+    }
     need(v.WHATSAPP_PROVIDER === 'cloud', ['WHATSAPP_ACCESS_TOKEN', 'WHATSAPP_PHONE_NUMBER_ID', 'WHATSAPP_APP_SECRET', 'WHATSAPP_WEBHOOK_VERIFY_TOKEN']);
     need(v.EMAIL_PROVIDER === 'resend', ['RESEND_API_KEY', 'EMAIL_FROM']);
     need(Boolean(v.WEB_REVALIDATE_URL), ['WEB_REVALIDATE_SECRET']);
@@ -95,9 +114,6 @@ const schema = z
     if (v.CORS_ORIGINS.includes('*')) ctx.addIssue({ code: 'custom', path: ['CORS_ORIGINS'], message: 'list the allowed origins; "*" is not allowed' });
 
     if (v.NODE_ENV !== 'production') return;
-    if (PUBLISHED_EXAMPLE_SECRETS.has(v.JWT_ACCESS_SECRET)) {
-      ctx.addIssue({ code: 'custom', path: ['JWT_ACCESS_SECRET'], message: 'is the published example value; generate your own with: openssl rand -base64 48' });
-    }
     // A real deployment serves over https. The development defaults point at http://localhost, so without this check a
     // server whose .env forgot these settings would start "fine" and send customers tracking links to localhost. Local
     // production-mode testing over plain http stays possible by saying so explicitly: COOKIE_SECURE=false.

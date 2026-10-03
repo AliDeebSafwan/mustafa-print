@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { LOCALES } from '../util/locales';
 import { CHANNELS } from './notifications';
 import { ORDER_STATUSES } from '../rules/order-status';
-import { PUBLIC_CODE_RE } from '../util/ids';
+import { MINTED_PUBLIC_CODE_RE } from '../util/ids';
 
 /**
  * Payload contracts for offline mutations. The staff app builds payloads against these types and the API validates
@@ -93,7 +93,7 @@ export const orderItemInput = z.object({
 });
 
 export const orderInsertPayload = z.object({
-  public_code: z.string().regex(PUBLIC_CODE_RE),
+  public_code: z.string().regex(MINTED_PUBLIC_CODE_RE),
   customer_id: uuid,
   fulfillment_type: z.enum(['pickup', 'delivery']).optional(),
   delivery_address: optionalText(500),

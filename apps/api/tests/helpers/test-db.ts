@@ -31,6 +31,10 @@ export async function createTestDatabase(): Promise<TestDatabase> {
   await migrator.end();
 
   const pool = new pg.Pool({ connectionString: url, max: 8 });
+  // drop() below ends this pool and then drops the database WITH (FORCE), which terminates any connection that was
+  // still closing. pg reports that on the pool, and an unlistened pool error is an uncaught exception that fails the
+  // whole run. Expected here, so it is swallowed; the application attaches a logging handler instead (see db/pool.ts).
+  pool.on('error', () => undefined);
   return {
     pool,
     url,
