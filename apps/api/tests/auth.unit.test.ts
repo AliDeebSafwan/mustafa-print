@@ -19,8 +19,14 @@ describe('login identifiers', () => {
     expect(normalizeIdentifier('0096170123456')).toBe('+96170123456');
     expect(normalizeIdentifier('(+961) 70-123-456')).toBe('+96170123456');
   });
+  it('finds a phone typed the local way, exactly as the staff screens save it (with the shop\'s country code)', () => {
+    expect(normalizeIdentifier('71 222 333')).toBe('+96171222333');
+    expect(normalizeIdentifier('03123456')).toBe('+9613123456');
+    expect(normalizeIdentifier('٧١٢٢٢٣٣٣')).toBe('+96171222333');            // Arabic-Indic digits from an Arabic keyboard
+    expect(normalizeIdentifier('6 12 34 56 78', '33')).toBe('+33612345678');   // another country, through the setting
+  });
   it('rejects anything else', () => {
-    for (const bad of ['', 'abc', '12345', 'not an@email', '+0123456789', "x'; DROP TABLE users;--"]) expect(normalizeIdentifier(bad)).toBeNull();
+    for (const bad of ['', 'abc', 'not an@email', '+0123456789', "x'; DROP TABLE users;--"]) expect(normalizeIdentifier(bad)).toBeNull();
   });
 });
 
@@ -107,7 +113,9 @@ describe('environment', () => {
     expect(() => parseEnv({ ...base, JWT_ACCESS_SECRET: 'short' })).toThrow(/at least 32/);
   });
   it('turns secure cookies on in production unless overridden', () => {
-    expect(parseEnv({ ...base, NODE_ENV: 'production' }).COOKIE_SECURE).toBe(true);
+    // production also needs real https addresses (see env-production.unit.test.ts); the point here is the cookie flag
+    const live = { PUBLIC_WEB_URL: 'https://shop.example', CORS_ORIGINS: 'https://app.shop.example' };
+    expect(parseEnv({ ...base, ...live, NODE_ENV: 'production' }).COOKIE_SECURE).toBe(true);
     expect(parseEnv({ ...base, NODE_ENV: 'development' }).COOKIE_SECURE).toBe(false);
     expect(parseEnv({ ...base, NODE_ENV: 'production', COOKIE_SECURE: 'false' }).COOKIE_SECURE).toBe(false);
   });

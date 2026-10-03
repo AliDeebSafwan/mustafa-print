@@ -64,6 +64,7 @@ function AccountDetailView({ id, onBack }: { id: string; onBack: () => Promise<v
     const detail = err instanceof ContentError ? err.detail : undefined
     if (detail === 'target_has_account') return t('accounts.error.targetHasAccount')
     if (detail === 'not_verified') return t('accounts.error.notVerified')
+    if (detail === 'already_verified') return t('accounts.error.alreadyVerified')
     if (err instanceof ContentError && err.code === 'offline') return t('site.error.offline')
     return t('common.error')
   }
@@ -122,6 +123,17 @@ function AccountDetailView({ id, onBack }: { id: string; onBack: () => Promise<v
       </p>
 
       {message && <p role={message.kind === 'error' ? 'alert' : 'status'} className={`mt-3 text-sm font-semibold ${message.kind === 'error' ? 'text-magenta' : 'text-ok'}`}>{message.text}</p>}
+
+      {!data.email_verified_at && (
+        <div className="mt-4 border border-rule p-3">
+          <h2 className="font-bold">{t('accounts.approveTitle')}</h2>
+          <p className="mt-1 text-xs text-muted">{t('accounts.approveHelp')}</p>
+          <button type="button" className={`${primaryBtn} mt-3`} disabled={busy}
+            onClick={() => { if (window.confirm(t('accounts.confirmApprove', { email: data.email }))) void run(() => customerAccountsApi.approve(id), t('accounts.approvedNow')) }}>
+            {t('accounts.approve')}
+          </button>
+        </div>
+      )}
 
       <div className="mt-4">
         {data.is_active ? (

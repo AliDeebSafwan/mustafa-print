@@ -18,6 +18,7 @@ export function adminCustomerAccountsRouter(deps: { accounts: CustomerAccountsAd
   router.get('/:id', async (req, res) => { res.json(await deps.accounts.detail(req.auth!, idOf(req.params.id))); });
   router.post('/:id/deactivate', async (req, res) => { res.json(await deps.accounts.setActive(req.auth!, idOf(req.params.id), false)); });
   router.post('/:id/reactivate', async (req, res) => { res.json(await deps.accounts.setActive(req.auth!, idOf(req.params.id), true)); });
+  router.post('/:id/approve', async (req, res) => { res.json(await deps.accounts.approve(req.auth!, idOf(req.params.id))); });
   router.post('/:id/merge', async (req, res) => {
     const { customer_id } = parseWith(z.object({ customer_id: uuid }), req.body);
     res.json(await deps.accounts.merge(req.auth!, idOf(req.params.id), customer_id));

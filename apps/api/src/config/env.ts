@@ -2,6 +2,8 @@ import { createHash } from 'node:crypto';
 import { config as loadDotenv } from 'dotenv';
 loadDotenv({ quiet: true });
 import { z } from 'zod';
+// The first zod user on the server, so the no-code-generation rule starts here (see packages/shared/src/util/zod-setup.ts).
+z.config({ jitless: true });
 
 const csv = (s: string) => s.split(',').map((x) => x.trim()).filter(Boolean);
 
@@ -23,6 +25,16 @@ export const isLeakedSecret = (value: string): boolean =>
 
 export const LEAKED_SECRET_MESSAGE =
   'this value was committed to the repository and is public: generate a new one with `openssl rand -base64 48`';
+
+/** A real public address: https, and not this machine. Dev defaults (http://localhost) must never reach production. */
+function isPublicHttpsUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' && !['localhost', '127.0.0.1', '[::1]', '0.0.0.0'].includes(url.hostname);
+  } catch {
+    return false;
+  }
+}
 
 const schema = z
   .object({
@@ -67,6 +79,9 @@ const schema = z
 
     /** The branch whose services, showroom and products the public website shows. */
     PUBLIC_BRANCH_CODE: z.string().min(1).default('MAIN'),
+    /** Country code added to a phone typed without one (Lebanon = 961). Keep it equal to the staff app's
+     *  VITE_DEFAULT_CALLING_CODE: a number must be normalised the same way when it is saved and when someone signs in. */
+    DEFAULT_CALLING_CODE: z.string().regex(/^[1-9][0-9]{0,3}$/, 'digits only, without + (e.g. 961)').default('961'),
     /** Where uploaded pictures are kept on the server. Back this directory up with the database. */
     MEDIA_DIR: z.string().min(1).default('./storage/media'),
     /** A running ClamAV daemon (clamd). Set the host to scan every customer design and proof; leave it empty to skip
@@ -94,6 +109,23 @@ const schema = z
     need(v.EMAIL_PROVIDER === 'resend', ['RESEND_API_KEY', 'EMAIL_FROM']);
     need(Boolean(v.WEB_REVALIDATE_URL), ['WEB_REVALIDATE_SECRET']);
     need(Boolean(v.VAPID_PUBLIC_KEY || v.VAPID_PRIVATE_KEY), ['VAPID_PUBLIC_KEY', 'VAPID_PRIVATE_KEY', 'VAPID_SUBJECT']);
+
+    // A wildcard with credentialed requests is never valid CORS, and would read as "any site" to whoever edits this.
+    if (v.CORS_ORIGINS.includes('*')) ctx.addIssue({ code: 'custom', path: ['CORS_ORIGINS'], message: 'list the allowed origins; "*" is not allowed' });
+
+    if (v.NODE_ENV !== 'production') return;
+    // A real deployment serves over https. The development defaults point at http://localhost, so without this check a
+    // server whose .env forgot these settings would start "fine" and send customers tracking links to localhost. Local
+    // production-mode testing over plain http stays possible by saying so explicitly: COOKIE_SECURE=false.
+    const insecureOptOut = v.COOKIE_SECURE === 'false';
+    if (insecureOptOut) return;
+    if (!isPublicHttpsUrl(v.PUBLIC_WEB_URL)) {
+      ctx.addIssue({ code: 'custom', path: ['PUBLIC_WEB_URL'], message: 'must be the website\'s public https address in production (e.g. https://example.com)' });
+    }
+    const badOrigins = v.CORS_ORIGINS.filter((origin) => !isPublicHttpsUrl(origin));
+    if (badOrigins.length) {
+      ctx.addIssue({ code: 'custom', path: ['CORS_ORIGINS'], message: `must list public https origins in production; not: ${badOrigins.join(', ')}` });
+    }
   })
   .transform((v) => ({ ...v, COOKIE_SECURE: v.COOKIE_SECURE ? v.COOKIE_SECURE === 'true' : v.NODE_ENV === 'production' }));
 

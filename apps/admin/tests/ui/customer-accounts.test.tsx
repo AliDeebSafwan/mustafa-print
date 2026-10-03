@@ -7,7 +7,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const session = vi.hoisted(() => ({ role: 'admin', id: '018f0000-0000-7000-8000-00000000c001', maxDiscountPercent: null as number | null }))
 const server = vi.hoisted(() => ({
   list: [] as Record<string, unknown>[], detail: {} as Record<string, unknown>,
-  listCalls: [] as unknown[][], merges: [] as unknown[][], deactivated: [] as unknown[][], failNext: null as null | { code: string; detail?: string },
+  listCalls: [] as unknown[][], merges: [] as unknown[][], deactivated: [] as unknown[][], approved: [] as unknown[][], failNext: null as null | { code: string; detail?: string },
 }))
 vi.mock('../../src/offline/request-sync', () => ({ requestSync: vi.fn() }))
 vi.mock('../../src/auth', async () => (await import('./harness')).authMock(session))
@@ -22,6 +22,7 @@ vi.mock('../../src/content', async () => {
       deactivate: async (...args: unknown[]) => { fail(); server.deactivated.push(args); server.detail = { ...server.detail, is_active: false }; return {} },
       reactivate: async () => { server.detail = { ...server.detail, is_active: true }; return {} },
       merge: async (...args: unknown[]) => { fail(); server.merges.push(args); return { orders_moved: 1 } },
+      approve: async (...args: unknown[]) => { fail(); server.approved.push(args); server.detail = { ...server.detail, email_verified_at: '2026-01-03T10:00:00Z', customer_id: 'c-new' }; return {} },
     },
   }
 })
@@ -38,7 +39,7 @@ beforeEach(async () => {
     list: [account, { ...account, id: 'a2', email: 'new@example.com', full_name: 'Not Confirmed', email_verified_at: null, customer_id: null, order_count: 0 }],
     detail: { ...account, locale: 'ar', customer_phone: null, orders: [{ id: 'o1', public_code: 'ABC123', order_number: '12', status: 'received', total: '40.00', currency: 'USD', placed_at: '2026-01-02T10:00:00Z' }],
       candidates: [{ id: 'c-counter', full_name: 'Walid Haddad', phone_e164: '+96171222333', email: null, order_count: 3 }] },
-    listCalls: [], merges: [], deactivated: [], failNext: null,
+    listCalls: [], merges: [], deactivated: [], approved: [], failNext: null,
   })
   vi.spyOn(window, 'confirm').mockReturnValue(true)
 })
@@ -85,6 +86,33 @@ describe('the website accounts screen', () => {
     await user.type(await screen.findByPlaceholderText('Or search for a customer by name or phone'), 'old record')
     await user.click(await screen.findByRole('button', { name: 'Merge into' }))
     await vi.waitFor(() => expect(server.merges).toEqual([['a1', customer.id]]))
+  })
+
+  it('approves an unconfirmed account after a confirmation that names the email', async () => {
+    server.detail = { ...server.detail, id: 'a2', email: 'new@example.com', full_name: 'Not Confirmed', email_verified_at: null, customer_id: null, orders: [], candidates: [] }
+    const user = userEvent.setup()
+    open()
+    await user.click(await screen.findByRole('button', { name: /Not Confirmed/ }))
+    await user.click(await screen.findByRole('button', { name: 'Approve account' }))
+    expect(window.confirm).toHaveBeenCalledWith(expect.stringContaining('new@example.com'))
+    expect(await screen.findByText('Account approved. The customer can order now.')).toBeTruthy()
+    expect(server.approved).toEqual([['a2']])
+    expect(screen.queryByRole('button', { name: 'Approve account' })).toBeNull()   // confirmed now: the button is gone
+  })
+
+  it('offers no approval for an account that is already confirmed, and approves nothing when the owner cancels', async () => {
+    const user = userEvent.setup()
+    open()
+    await user.click(await screen.findByRole('button', { name: /Walid Haddad/ }))
+    await screen.findByText('#12')
+    expect(screen.queryByRole('button', { name: 'Approve account' })).toBeNull()
+
+    server.detail = { ...server.detail, email_verified_at: null, customer_id: null }
+    vi.mocked(window.confirm).mockReturnValue(false)
+    await user.click(screen.getByRole('button', { name: /All accounts/ }))
+    await user.click(await screen.findByRole('button', { name: /Walid Haddad/ }))
+    await user.click(await screen.findByRole('button', { name: 'Approve account' }))
+    expect(server.approved).toEqual([])
   })
 
   it('explains a refused merge in plain words', async () => {

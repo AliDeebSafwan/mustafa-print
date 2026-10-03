@@ -9,7 +9,7 @@ export const revalidate = 3600;
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = siteUrl();
   const services = await getServices("ar");
-  const paths = ["", "/services", "/gallery", "/products", "/contact", "/privacy", "/terms", ...services.map((s) => `/services/${s.slug}`)];
+  const paths = ["", "/services", "/studio", "/gallery", "/products", "/contact", "/privacy", "/terms", ...services.map((s) => `/services/${s.slug}`)];
   return paths.flatMap((path) => LOCALES.map((lang) => ({
     url: `${base}/${lang}${path}`,
     alternates: { languages: Object.fromEntries(LOCALES.map((l) => [l, `${base}/${l}${path}`])) },

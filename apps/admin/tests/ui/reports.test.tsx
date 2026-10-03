@@ -139,6 +139,16 @@ describe('the dashboard\'s week and live floor', () => {
   })
 })
 
+describe('the machine status placeholder', () => {
+  it('says plainly that it is coming soon, and shows no machine figures at all', async () => {
+    openDashboard()
+    const panel = within(await screen.findByRole('region', { name: 'Machine status' }))
+    expect(panel.getByText('Coming soon')).toBeTruthy()
+    expect(panel.getByText(/No machine data is collected yet/)).toBeTruthy()
+    expect(screen.getByRole('region', { name: 'Machine status' }).textContent).not.toMatch(/[0-9]/)   // nothing made up
+  })
+})
+
 describe('the unpaid balances screen', () => {
   it('shows an empty state when everything is settled', async () => {
     openUnpaid()

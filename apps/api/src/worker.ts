@@ -18,7 +18,7 @@ const providers = buildProviders(env, log);
 const worker = startOutboxWorker({ pool, providers, log, intervalMs: env.WORKER_POLL_INTERVAL_MS, batchSize: env.WORKER_BATCH_SIZE });
 // Housekeeping: drop long-expired sessions and stale login-throttle rows.
 const auth = createAuthService({ pool, cfg: authConfigFromEnv(env) });
-const customerAccounts = createCustomerAuthService({ pool, mailer: providers.get('email')!, siteUrl: env.PUBLIC_WEB_URL, branchCode: env.PUBLIC_BRANCH_CODE });
+const customerAccounts = createCustomerAuthService({ pool, mailer: providers.get('email')!, siteUrl: env.PUBLIC_WEB_URL, branchCode: env.PUBLIC_BRANCH_CODE, log });
 const webOrders = createWebOrderService({ pool, storage: localDiskStorage(env.MEDIA_DIR), scanner: disabledScanner /* the worker never receives uploads */, publicWebUrl: env.PUBLIC_WEB_URL });
 const prune = () => Promise.all([auth.pruneExpired(), customerAccounts.pruneExpired(), webOrders.pruneUnattached()])
   .then(([removed]) => log.info(removed, 'auth housekeeping'))

@@ -1,6 +1,6 @@
 /** Corner crop marks. Logical utilities (start/end) keep them correct in both RTL and LTR. */
 export function CropMarks() {
-  const mark = "absolute size-4 border-ink";
+  const mark = "absolute size-4 border-cyan/70";
   return (
     <>
       <span aria-hidden className={`${mark} start-0 top-0 border-s border-t`} />

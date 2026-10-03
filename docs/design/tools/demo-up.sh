@@ -4,7 +4,9 @@
 set -e
 R=$(cd "$(dirname "$0")/../../.." && pwd); T=$R/docs/design/tools
 export PGPASSWORD=${PGPASSWORD:-app}; PG="psql -h localhost -U ${PGUSER:-app}"
-pkill -f "dist/server.js" 2>/dev/null || true; sleep 1
+# Stop a previous demo API by its port, never by matching command lines (that also kills any calling shell whose
+# own command mentions the same text).
+lsof -ti tcp:4280 | xargs -r kill 2>/dev/null || true; sleep 1
 $PG -d postgres -qc "DROP DATABASE IF EXISTS mpe_design WITH (FORCE)" -c "CREATE DATABASE mpe_design" 2>/dev/null
 export DATABASE_URL=postgres://${PGUSER:-app}:${PGPASSWORD}@localhost:5432/mpe_design
 cd $R/apps/api && node dist/migrate.js >/dev/null && SEED_ADMIN_EMAIL=owner@demo.example SEED_ADMIN_PASSWORD=demo-owner-password-long node dist/seed.js >/dev/null

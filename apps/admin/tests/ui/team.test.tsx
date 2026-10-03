@@ -84,6 +84,42 @@ describe('the staff screen', () => {
     })
   })
 
+  it('accepts a phone number typed the local way and stores it in international form', async () => {
+    const user = userEvent.setup()
+    openStaff()
+    await user.click(await screen.findByRole('button', { name: 'Add a member' }))
+    await user.type(screen.getByLabelText('Full name'), 'Karim Saad')
+    await user.type(screen.getByLabelText('Phone number'), '70 123 456')
+    await user.type(screen.getByLabelText(/^Password/), 'worker-password-1')
+    await user.click(screen.getByRole('button', { name: 'Save' }))
+    await vi.waitFor(() => expect(server.created).toHaveLength(1))
+    expect(server.created[0]![0]).toMatchObject({ full_name: 'Karim Saad', phone_e164: '+96170123456', email: null })
+  })
+
+  it('names the phone as the problem when it is not a number, without calling the server', async () => {
+    const user = userEvent.setup()
+    openStaff()
+    await user.click(await screen.findByRole('button', { name: 'Add a member' }))
+    await user.type(screen.getByLabelText('Full name'), 'Karim Saad')
+    await user.type(screen.getByLabelText('Phone number'), '12')
+    await user.type(screen.getByLabelText(/^Password/), 'worker-password-1')
+    await user.click(screen.getByRole('button', { name: 'Save' }))
+    expect((await screen.findByRole('alert')).textContent).toMatch(/^This phone number is not valid/)
+    expect(server.created).toHaveLength(0)
+  })
+
+  it('names the field the server rejected instead of a bare "invalid details"', async () => {
+    const user = userEvent.setup()
+    openStaff()
+    await user.click(await screen.findByRole('button', { name: 'Add a member' }))
+    await user.type(screen.getByLabelText('Full name'), 'Karim Saad')
+    await user.type(screen.getByLabelText('Email'), 'karim@example.com')
+    await user.type(screen.getByLabelText(/^Password/), 'worker-password-1')
+    server.failNext = { code: 'invalid_request', detail: 'email: Invalid email address' }
+    await user.click(screen.getByRole('button', { name: 'Save' }))
+    expect((await screen.findByRole('alert')).textContent).toBe('This email address is not valid.')
+  })
+
   it('an admin role hides the extra-permissions list, since it always has everything', async () => {
     const user = userEvent.setup()
     openStaff()

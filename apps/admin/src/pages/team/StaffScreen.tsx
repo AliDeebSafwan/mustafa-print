@@ -1,9 +1,10 @@
 import { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ASSIGNABLE_ROLES, PASSWORD_MIN, TOGGLEABLE_PERMISSIONS, type AssignableRole, type ToggleablePermission } from '@mpe/shared'
+import { ASSIGNABLE_ROLES, PASSWORD_MIN, TOGGLEABLE_PERMISSIONS, normalizePhone, staffCreateInput, staffUpdateInput, type AssignableRole, type ToggleablePermission } from '@mpe/shared'
 import { ContentErrorMessage } from '../../components/site/ContentErrorMessage'
 import { ContentError, teamApi, type StaffRow } from '../../content'
 import { useResource } from '../../content/use-resource'
+import { DEFAULT_CALLING_CODE } from '../../lib/config'
 import { ghostBtn, inputCls, labelCls, primaryBtn } from '../../lib/ui'
 
 const asContentError = (err: unknown) => (err instanceof ContentError ? err : new ContentError('server'))
@@ -67,6 +68,13 @@ function StaffForm({ user, onDone }: { user: StaffRow | null; onDone: () => Prom
     : detail === 'email_in_use' ? t('team.error.emailInUse')
     : detail === 'phone_in_use' ? t('team.error.phoneInUse')
     : undefined
+  /** What to tell the owner when a field is rejected, here or by the server ("field: reason"). Never just "invalid". */
+  const fieldMessage = (field?: string) =>
+    field === 'phone_e164' ? t('team.error.phoneInvalid')
+    : field === 'email' ? t('team.error.emailInvalid')
+    : field === 'password' ? t('team.passwordTooShort', { n: PASSWORD_MIN })
+    : field === 'full_name' ? t('team.needName')
+    : undefined
 
   async function save() {
     setProblem(null)
@@ -74,18 +82,27 @@ function StaffForm({ user, onDone }: { user: StaffRow | null; onDone: () => Prom
     if (!form.full_name.trim()) return setProblem(t('team.needName'))
     if (!form.email.trim() && !form.phone_e164.trim()) return setProblem(t('team.needContact'))
     if (!user && form.password.trim().length < PASSWORD_MIN) return setProblem(t('team.passwordTooShort', { n: PASSWORD_MIN }))
+    // People type numbers the way they say them ("70 123 456", "03 123456", "+961 70 123 456"); the server stores the
+    // international form. Converted here exactly as on the customer screens, with the shop's country code.
+    const typedPhone = form.phone_e164.trim()
+    const phone = typedPhone ? normalizePhone(typedPhone, DEFAULT_CALLING_CODE) : null
+    if (typedPhone && !phone) return setProblem(t('team.error.phoneInvalid'))
+    const shared = {
+      full_name: form.full_name.trim(), email: form.email.trim() || null, phone_e164: phone,
+      locale: form.locale, role_key: form.role_key, granted_permissions: form.role_key === 'staff' ? form.granted_permissions : [],
+    }
+    // Checked with the very schema the server applies, so a mistake is named here instead of coming back as a bare 400.
+    const checked = user ? staffUpdateInput.safeParse({ ...shared, is_active: form.is_active }) : staffCreateInput.safeParse({ ...shared, password: form.password })
+    if (!checked.success) return setProblem(fieldMessage(String(checked.error.issues[0]?.path[0])) ?? t('site.error.invalid_request'))
     setBusy(true)
     try {
-      const shared = {
-        full_name: form.full_name.trim(), email: form.email.trim() || null, phone_e164: form.phone_e164.trim() || null,
-        locale: form.locale, role_key: form.role_key, granted_permissions: form.role_key === 'staff' ? form.granted_permissions : [],
-      }
       if (user) await teamApi.save(user, { ...shared, is_active: form.is_active })
       else await teamApi.create({ ...shared, password: form.password })
       await onDone()
     } catch (err) {
       const e = asContentError(err)
-      const known = detailMessage(e.detail)
+      const rejectedField = e.code === 'invalid_request' ? e.detail?.split(':')[0]?.trim() : undefined
+      const known = detailMessage(e.detail) ?? fieldMessage(rejectedField)
       if (known) setProblem(known)
       else setError(e)
       setBusy(false)
@@ -96,7 +113,7 @@ function StaffForm({ user, onDone }: { user: StaffRow | null; onDone: () => Prom
     <div className="flex flex-col gap-3">
       <label className={labelCls}>{t('team.name')}<input className={inputCls} value={form.full_name} onChange={(e) => set('full_name', e.target.value)} /></label>
       <label className={labelCls}>{t('customer.email')}<input className={inputCls} dir="ltr" inputMode="email" value={form.email} onChange={(e) => set('email', e.target.value)} /></label>
-      <label className={labelCls}>{t('customer.phone')}<input className={inputCls} dir="ltr" inputMode="tel" value={form.phone_e164} onChange={(e) => set('phone_e164', e.target.value)} /></label>
+      <label className={labelCls}>{t('customer.phone')}<input className={inputCls} dir="ltr" inputMode="tel" value={form.phone_e164} placeholder="70 123 456" onChange={(e) => set('phone_e164', e.target.value)} /></label>
       {!user && (
         <label className={labelCls}>{t('team.password')}
           <input className={inputCls} dir="ltr" type="password" autoComplete="new-password" value={form.password} onChange={(e) => set('password', e.target.value)} />
