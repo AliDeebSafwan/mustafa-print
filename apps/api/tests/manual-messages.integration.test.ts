@@ -62,6 +62,33 @@ describe.skipIf(!hasTestDatabase)('manual messaging', () => {
     expect(rows[0]).toEqual({ status: 'queued', due: true });
   });
 
+  it('caps how many one person may queue in an hour, so a stolen token cannot spend the shop dry', async () => {
+    // This is the only mutation billed per call. A push carries up to 200 mutations, so limiting sync REQUESTS would
+    // bound nothing: the cap has to live on the message itself.
+    const customerId = await createCustomer(staff);
+    const { id: orderId } = await createOrder(staff, customerId);
+    expect((await send(staff, orderId)).result).toBe('applied');
+
+    const { rows: [first] } = await s.pool.query<{ created_by: string; branch_id: string; recipient: string }>(
+      'SELECT created_by, branch_id, recipient FROM notification_logs WHERE order_id = $1', [orderId]);
+    // Stand in for an hour of this person's sends rather than queueing them one by one.
+    await Promise.all(Array.from({ length: 59 }, () =>
+      s.pool.query(
+        `INSERT INTO notification_logs (branch_id, order_id, channel, locale, trigger, recipient, body, created_by)
+         VALUES ($1, $2, 'whatsapp', 'ar', 'manual', $3, 'filler', $4)`,
+        [first!.branch_id, orderId, first!.recipient, first!.created_by])));
+
+    expect(await send(staff, orderId)).toMatchObject({ result: 'rejected', error: expect.stringContaining('too_many_messages') });
+
+    // The owner is a different person, so one account's spending never gags the rest of the shop.
+    const ownersOrder = await createOrder(admin, await createCustomer(admin));
+    expect((await send(admin, ownersOrder.id)).result).toBe('applied');
+
+    // And it is a rate, not a lifetime quota: an hour later the same person works normally again.
+    await s.pool.query(`UPDATE notification_logs SET queued_at = clock_timestamp() - interval '2 hours' WHERE created_by = $1`, [first!.created_by]);
+    expect((await send(staff, orderId)).result).toBe('applied');
+  });
+
   it('requires the notifications:send permission', async () => {
     const operator = await s.as('operator');   // machine_operator: no messaging permission at all
     const customerId = await createCustomer(admin);

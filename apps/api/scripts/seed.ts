@@ -7,6 +7,7 @@ loadDotenv({ quiet: true });
 import { hash } from '@node-rs/argon2';
 import pg from 'pg';
 import { ROLE_DEFINITIONS } from '@mpe/shared';
+import { isLeakedSecret, LEAKED_SECRET_MESSAGE } from '../src/config/env';
 import { ensureDefaultTemplates } from '../src/modules/messaging/default-templates';
 
 const env = process.env;
@@ -15,6 +16,8 @@ const adminEmail = env.SEED_ADMIN_EMAIL;
 const adminPassword = env.SEED_ADMIN_PASSWORD;
 if (!adminEmail || !adminPassword) throw new Error('Set SEED_ADMIN_EMAIL and SEED_ADMIN_PASSWORD');
 if (adminPassword.length < 12) throw new Error('SEED_ADMIN_PASSWORD must be at least 12 characters');
+// The owner's account is the one that can do everything; never create it with a password the repository has published.
+if (isLeakedSecret(adminPassword)) throw new Error(`SEED_ADMIN_PASSWORD: ${LEAKED_SECRET_MESSAGE}`);
 
 const client = new pg.Client({ connectionString: env.DATABASE_URL });
 await client.connect();

@@ -5,7 +5,7 @@ import { createLogger } from './logger';
 
 const env = getEnv();
 const log = createLogger(env.LOG_LEVEL, env.NODE_ENV === 'development');
-const pool = createPool(env.DATABASE_URL);
+const pool = createPool(env.DATABASE_URL, (err) => log.error({ err }, 'idle database connection failed'));
 if (env.NODE_ENV === 'production' && env.EMAIL_PROVIDER !== 'resend') {
   // Without a real mail provider, customers cannot confirm their email or reset a password, and the console
   // provider would print their one-time links into the logs, where anyone reading logs could use them.

@@ -10,5 +10,7 @@ dist
 coverage
 .drizzle-pull
 apps/admin/dev-dist
+# Uploaded pictures and designs: runtime data, backed up with the database, never source.
+apps/api/storage
 docs/training/tools/node_modules
 docs/training/.*.html
