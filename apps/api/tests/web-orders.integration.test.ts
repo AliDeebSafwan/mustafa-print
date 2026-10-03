@@ -33,6 +33,7 @@ describe.skipIf(!hasTestDatabase)('ordering from the website', () => {
       post: (path: string, json: unknown = {}) => send('POST', path, { json }),
       get: (path: string) => send('GET', path),
       upload: (data: Buffer, name: string) => { const form = new FormData(); form.append('file', new Blob([new Uint8Array(data)]), name); return send('POST', '/files', { form }); },
+      uploadForm: (form: FormData) => send('POST', '/files', { form }),
     };
   };
   const customer = async (email: string, verify = true) => {
@@ -146,6 +147,46 @@ describe.skipIf(!hasTestDatabase)('ordering from the website', () => {
       const thief = await customer('thief@example.com');
       expect(await jsonOf(await thief.post('/orders', checkout({ items: [{ product_id: cards, quantity: 1, file_ids: [theirs.id] }] })))).toMatchObject({ message: 'file_unavailable' });
       expect((await browser().upload(PDF, 'x.pdf')).status).toBe(401);
+    });
+
+    it('refuses a stranger before reading the body, not after', async () => {
+      // The ordering is the whole point: checked afterwards, a stranger's 401 arrived only once multer had written up
+      // to 100 MB to disk and deleted it again — bandwidth and disk spent, nothing left to notice.
+      // Two file fields is what separates the two arrangements: the body parser allows one and rejects the pair with
+      // 400, so a 401 here can only mean the session was checked before the body was touched.
+      const two = new FormData();
+      two.append('file', new Blob([new Uint8Array(PDF)]), 'a.pdf');
+      two.append('file', new Blob([new Uint8Array(PDF)]), 'b.pdf');
+      expect((await browser().uploadForm(two)).status).toBe(401);
+
+      // ...and a signed-in customer still gets the body parser's own verdict on the same request.
+      const b = await customer('twofiles@example.com');
+      const pair = new FormData();
+      pair.append('file', new Blob([new Uint8Array(PDF)]), 'a.pdf');
+      pair.append('file', new Blob([new Uint8Array(PDF)]), 'b.pdf');
+      expect((await b.uploadForm(pair)).status).toBe(400);
+    });
+
+    it('caps what one account may upload, so nobody can fill the disk', async () => {
+      const b = await customer('hoarder@example.com');
+      const first = await jsonOf(await b.upload(PDF, 'one.pdf'));
+      expect(first.id).toBeTruthy();
+
+      // Stand in for an hour of real uploads rather than sending them: the cap is what is under test, not multer.
+      const { rows: [account] } = await s.pool.query<{ id: string; branch_id: string }>(
+        `SELECT id, branch_id FROM customer_accounts WHERE email = $1`, ['hoarder@example.com']);
+      const bulk = Array.from({ length: 20 }, (_, i) =>
+        s.pool.query(
+          `INSERT INTO order_files (branch_id, storage_key, original_name, kind, bytes, uploaded_by_account)
+           VALUES ($1, $2, $3, 'pdf', 1024, $4)`,
+          [account!.branch_id, `designs/filler-${account!.id}-${i}.pdf`, `filler-${i}.pdf`, account!.id]));
+      await Promise.all(bulk);
+
+      expect(await jsonOf(await b.upload(PDF, 'twentytwo.pdf'))).toMatchObject({ error: 'too_many_attempts', message: 'upload_quota_hourly' });
+
+      // The hourly cap is about rate, not about punishing a returning customer: older uploads stop counting.
+      await s.pool.query(`UPDATE order_files SET created_at = clock_timestamp() - interval '2 hours' WHERE uploaded_by_account = $1`, [account!.id]);
+      expect((await b.upload(PDF, 'tomorrow.pdf')).status).toBe(201);
     });
 
     it('removes uploads nobody attached within a day, files included', async () => {
