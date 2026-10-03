@@ -9,8 +9,8 @@ x-api: &api
     DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
     NODE_ENV: production
     TRUST_PROXY: "1"
-    CORS_ORIGINS: https://${APP_DOMAIN}
-    PUBLIC_WEB_URL: https://${SITE_DOMAIN}
+    CORS_ORIGINS: ${PUBLIC_SCHEME:-https}://${APP_DOMAIN}
+    PUBLIC_WEB_URL: ${PUBLIC_SCHEME:-https}://${SITE_DOMAIN}
     WEB_REVALIDATE_URL: http://web:3000/api/revalidate
     WEB_REVALIDATE_SECRET: ${REVALIDATE_SECRET}
     MEDIA_DIR: /data/media
@@ -78,8 +78,8 @@ services:
     restart: unless-stopped
     environment:
       API_INTERNAL_URL: http://api:4000
-      PUBLIC_API_URL: https://${SITE_DOMAIN}
-      SITE_URL: https://${SITE_DOMAIN}
+      PUBLIC_API_URL: ${PUBLIC_SCHEME:-https}://${SITE_DOMAIN}
+      SITE_URL: ${PUBLIC_SCHEME:-https}://${SITE_DOMAIN}
       REVALIDATE_SECRET: ${REVALIDATE_SECRET:?set REVALIDATE_SECRET}
     depends_on: [api]
 
@@ -88,8 +88,8 @@ services:
       context: ..
       dockerfile: deploy/caddy.Dockerfile
       args:
-        APP_URL: https://${APP_DOMAIN:?set APP_DOMAIN}
-        SITE_URL: https://${SITE_DOMAIN:?set SITE_DOMAIN}
+        APP_URL: ${PUBLIC_SCHEME:-https}://${APP_DOMAIN:?set APP_DOMAIN}
+        SITE_URL: ${PUBLIC_SCHEME:-https}://${SITE_DOMAIN:?set SITE_DOMAIN}
     image: mustafa-print/caddy:latest
     restart: unless-stopped
     environment:
